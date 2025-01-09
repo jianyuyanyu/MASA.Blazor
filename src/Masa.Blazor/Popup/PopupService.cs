@@ -1,21 +1,92 @@
-﻿using Masa.Blazor.Popup.Components;
+﻿using Masa.Blazor.Popup;
+using Masa.Blazor.Popup.Components;
 
 namespace Masa.Blazor;
 
-public partial class PopupService : IPopupService
+public class PopupService : IPopupService
 {
-    private readonly IPopupProvider _popupProvider;
+    private readonly List<ProviderItem> _items = [];
+    private readonly object _obj = new();
 
-    public PopupService(IPopupProvider popupProvider)
+    internal event EventHandler? StateChanged;
+    internal event Func<SnackbarOptions, Task>? SnackbarOpen;
+
+    public PopupService()
     {
-        _popupProvider = popupProvider;
-
-        OpenAsync(typeof(Toast), new Dictionary<string, object>());
+        _ = OpenAsync(typeof(EnqueuedSnackbars), new Dictionary<string, object?>());
     }
 
-    public Task<object> OpenAsync(Type componentType, Dictionary<string, object> parameters)
+    public void Open(Type componentType, IDictionary<string, object?>? parameters = null)
     {
-        var item = _popupProvider.Add(componentType, parameters, this, nameof(PopupService));
-        return item.TaskCompletionSource.Task;
+        Add(componentType, parameters);
+    }
+
+    public Task<object?> OpenAsync(Type componentType, IDictionary<string, object?> parameters)
+    {
+        return Add(componentType, parameters).TaskCompletionSource.Task;
+    }
+
+    public void Close(Type componentType)
+    {
+        var item = GetItems().LastOrDefault(u => u.ComponentType == componentType);
+        if (item is not null)
+        {
+            Remove(item);
+        }
+    }
+
+    public void Clear()
+    {
+        lock (_obj)
+        {
+            _items.RemoveAll(u => u.ComponentType != typeof(EnqueuedSnackbars));
+
+            StateHasChanged();
+        }
+    }
+
+    public async Task EnqueueSnackbarAsync(SnackbarOptions options)
+    {
+        if (SnackbarOpen is null)
+            return;
+
+        await SnackbarOpen.Invoke(options);
+    }
+
+    internal ProviderItem Add(Type componentType, IDictionary<string, object?>? attributes)
+    {
+        var item = new ProviderItem(componentType, attributes, this);
+
+        lock (_obj)
+        {
+            _items.Add(item);
+
+            StateHasChanged();
+
+            return item;
+        }
+    }
+
+    internal void Remove(ProviderItem item)
+    {
+        lock (_obj)
+        {
+            _items.Remove(item);
+
+            StateHasChanged();
+        }
+    }
+
+    internal IEnumerable<ProviderItem> GetItems()
+    {
+        lock (_obj)
+        {
+            return _items;
+        }
+    }
+
+    private void StateHasChanged()
+    {
+        StateChanged?.Invoke(this, EventArgs.Empty);
     }
 }

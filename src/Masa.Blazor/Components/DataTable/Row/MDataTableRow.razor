@@ -1,0 +1,24 @@
+﻿@namespace Masa.Blazor.Components.DataTable
+@typeparam TItem
+@inherits MasaComponentBase
+
+<tr class="@GetClass()" @attributes="Attributes">
+    @foreach (var header in Headers)
+    {
+        var props = new ItemColProps<TItem>(header, Item);
+        var title = header.Ellipsis is { Enabled: true, HideTitle: false } ? props.Value : null;
+
+        <td class="@GetCellClass(header)"
+            style="@GetCellStyle(header)"
+            title="@title">
+            @if (HasSlot(props))
+            {
+                @SlotContent(props)
+            }
+            else
+            {
+                @props.ValueContent
+            }
+        </td>
+    }
+</tr>

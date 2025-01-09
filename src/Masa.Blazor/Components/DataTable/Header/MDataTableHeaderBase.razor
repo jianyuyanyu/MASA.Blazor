@@ -1,0 +1,35 @@
+﻿@namespace Masa.Blazor.Components.DataTable.Header
+@inherits MasaComponentBase
+
+@code {
+    
+    protected RenderFragment GenSortIcon() => __builder =>
+    {
+        <MIcon Class="m-data-table-header__icon"
+               Size="18">
+            @SortIcon
+        </MIcon>
+    };
+
+    protected RenderFragment GenSelectAll() => __builder =>
+    {
+        if (DataTableSelectContent is not null)
+        {
+            @(DataTableSelectContent(new DataTableHeaderSelectContext(EveryItem, OnToggleSelectAll, IsIndeterminate)))
+        }
+        else
+        {
+            <MSimpleCheckbox Class="m-data-table__checkbox"
+                             Value="@EveryItem"
+                             ValueChanged="@OnToggleSelectAll"
+                             Indeterminate="@IsIndeterminate"
+                             Color="@CheckboxColor">
+            </MSimpleCheckbox>
+        }
+    };
+    
+    protected RenderFragment GenNumber() => __builder =>
+    {
+        <span>#</span>
+    };
+}

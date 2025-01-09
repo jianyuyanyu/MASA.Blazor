@@ -1,0 +1,37 @@
+﻿@namespace Masa.Blazor
+@inherits MSortableProviderBase<TItem>
+@typeparam TItem
+
+<MElement Class="@GetClass()"
+          Style="@GetStyle()"
+          Tag="@Tag"
+          id="@Id"
+          ReferenceCaptureAction="r => Ref = r"
+          @attributes="@Attributes">
+    @GenItems()
+</MElement>
+
+@code {
+
+    private RenderFragment GenItems() => __builder =>
+    {
+        if (ChildContent is null)
+        {
+            return;
+        }
+
+        @foreach (var item in Items)
+        {
+            var dataId = ItemKey?.Invoke(item);
+
+            <MElement Tag="@ItemTag"
+                      Class="@GetClass(_block.Element("item").Name, ItemClass)"
+                      Style="@ItemStyle"
+                      @key="@(dataId ?? (object?)item)"
+                      data-id="@dataId">
+                @ChildContent(item)
+            </MElement>
+        }
+    };
+
+}

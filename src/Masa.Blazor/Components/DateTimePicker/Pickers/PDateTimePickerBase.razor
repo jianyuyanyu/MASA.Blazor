@@ -1,0 +1,88 @@
+﻿@namespace Masa.Blazor.Presets
+@typeparam TValue
+@inherits PDateTimePickerView<TValue>
+
+<CascadingValue Value="this" IsFixed>
+    @if (IsDialog)
+    {
+        <MDialog Value="_menu"
+                 ValueChanged="OnMenuChanged"
+                 ActivatorContent="@ComputedActivatorContent"
+                 ContentClass="@Class">
+            <ChildContent>
+                @ViewContent()
+                @ActionsContent()
+            </ChildContent>
+        </MDialog>
+    }
+    else
+    {
+        <MMenu Value="_menu"
+               ValueChanged="OnMenuChanged"
+               CloseOnContentClick="false"
+               OffsetY
+               NudgeBottom="1"
+               ActivatorContent="@ComputedActivatorContent"
+               ContentClass="@Class">
+            <ChildContent>
+                @ViewContent()
+                @ActionsContent()
+            </ChildContent>
+        </MMenu>
+    }
+
+    @ChildContent
+</CascadingValue>
+
+@code {
+
+    protected virtual RenderFragment CompactPickerView() => __builder => { };
+    protected virtual RenderFragment DefaultPickerView() => __builder => { };
+
+    private RenderFragment<ActivatorProps> ComputedActivatorContent => ActivatorContent ?? DefaultActivator;
+
+    private RenderFragment DefaultActivator(ActivatorProps context) => __builder =>
+    {
+        _defaultActivator ??= new();
+        var value = Value is DateTime dateTime ? dateTime.ToString(_defaultActivator.Format) : null;
+
+        <MTextField Value="@value"
+                    Readonly
+                    Clearable="@_defaultActivator.Clearable"
+                    Dense="@_defaultActivator.Dense"
+                    Filled="@_defaultActivator.Filled"
+                    HideDetails="@_defaultActivator.HideDetails"
+                    Outlined="@_defaultActivator.Outlined"
+                    Solo="@_defaultActivator.Solo"
+                    SoloInverted="@_defaultActivator.SoloInverted"
+                    RootAttributes="@context.Attrs">
+        </MTextField>
+    };
+
+    private RenderFragment ViewContent() => __builder =>
+    {
+        @if (IsCompact)
+        {
+            @CompactPickerView()
+        }
+        else
+        {
+            @DefaultPickerView()
+        }
+    };
+
+    private RenderFragment ActionsContent() => __builder =>
+    {
+        <MDivider/>
+        <div class="@BasePickerBlock.Element("actions")">
+            <MButton Color="primary"
+                     Text
+                     OnClick="@HandleOnConfirm"
+                     Dark="@Dark"
+                     Light="@Light">
+                @I18n.T("$masaBlazor.ok")
+            </MButton>
+        </div>
+    };
+
+}

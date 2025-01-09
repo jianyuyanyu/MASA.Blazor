@@ -1,0 +1,54 @@
+﻿@namespace Masa.Blazor.Components.DataTable
+@typeparam TItem
+@inherits MasaComponentBase
+
+<tr class="@GetClass()" @attributes="@Attributes">
+    @foreach (var header in Headers)
+    {
+        if (header.Value == "data-table-no")
+        {
+            continue;
+        }
+
+        <td class="@_block.Element("mobile-row").Name">
+            @{
+                if (header.Value != "data-table-select" && !HideDefaultHeader)
+                {
+                    <div class="@_block.Element("mobile-row__header").AppendClasses(header.Class)">
+                        @if (HeaderColContent != null)
+                        {
+                            @HeaderColContent(header)
+                        }
+                        else
+                        {
+                            @header.Text
+                        }
+                    </div>
+                }
+
+                var props = new ItemColProps<TItem>(header, Item);
+                <div class="@_block.Element("mobile-row__cell").AppendClasses(header.CellClass)">
+                    @if (HasSlot(props))
+                    {
+                        @SlotContent(props)
+                    }
+                    else if (header.CellRender is not null)
+                    {
+                        var cell = header.CellRender(Item);
+                        if (cell.IsT0)
+                        {
+                            @cell.AsT0
+                        }
+                        else
+                        {
+                            @cell.AsT1
+                        }
+                    }
+                    else
+                    {
+                        @props.Value
+                    }
+                </div>}
+        </td>
+    }
+</tr>

@@ -1,0 +1,86 @@
+﻿@namespace Masa.Blazor.Presets
+@inherits PatternPathComponentBase
+
+<CascadingValue Value="this" IsFixed>
+    <MTabs Routable
+           Class="@GetClass()"
+           Style="@GetStyle()"
+           ActiveClass="@ActiveClass"
+           BackgroundColor="@BackgroundColor"
+           Color="@Color"
+           Height="@Height"
+           HideSlider="@HideSlider"
+           SliderColor="@SliderColor"
+           SliderSize="@SliderSize"
+           ShowArrows="true"
+           Dark="@Dark"
+           @ref="@_tabs">
+        @foreach (var patternPath in PatternPaths)
+        {
+            var tabTitle = GetTabTitle(patternPath);
+            var tabOptions = patternPath.Options;
+
+            <MTab Href="@patternPath.AbsolutePath"
+                  Class="@GetClass(_tabBlock.Name, TabClass, tabOptions?.Class)"
+                  Exact
+                  Ripple="@Ripple"
+                  @key="@patternPath.Pattern"
+                  @oncontextmenu="@((e) => HandleOnContextmenu(e, patternPath))"
+                  __internal_preventDefault_oncontextmenu
+                  @onauxclick="@(e => HandleOnAuxclick(e, patternPath, tabTitle))"
+                  __internal_preventDefault_onauxclick>
+
+                @if (TabIconContent != default)
+                {
+                    TabIconContent.Invoke(new PageTabPathValue(patternPath.AbsolutePath, patternPath.AbsolutePath == NavigationManager.GetAbsolutePath()));
+                }
+                else if (tabOptions?.Icon != default)
+                {
+                    <MIcon Size="20">@tabOptions.Icon</MIcon>
+                }
+
+                <span class="@GetClass(_tabBlock.Element("title").Name, tabOptions?.TitleClass)"
+                      style="@tabOptions?.TitleStyle">
+                    @tabTitle
+                </span>
+
+                @if ((tabOptions == null) || tabOptions.Closeable)
+                {
+                    <MButton Icon
+                             Class="@_tabBlock.Element("close").Name"
+                             OnClick="() => HandleOnCloseTab(patternPath, tabTitle)"
+                             XSmall
+                             OnClickStopPropagation
+                             OnClickPreventDefault>
+                        <MIcon Small>@(CloseIcon ?? "$close")</MIcon>
+                    </MButton>
+                }
+            </MTab>
+        }
+
+        <MMenu @bind-Value="_menuValue"
+               Absolute
+               OffsetY
+               PositionX="@_positionX"
+               PositionY="@_positionY"
+               CloseOnContentClick>
+            <MList Dense>
+                @if (_contextmenuPath is { IsCloseable: true })
+                {
+                    <MListItem OnClick="HandleOnCloseTabOnMenu">@CloseTabText</MListItem>
+                }
+
+                @if (TabReload != null)
+                {
+                    <MListItem OnClick="HandleOnReloadTab">@ReloadTabText</MListItem>
+                }
+
+                <MListItem OnClick="HandleOnCloseTabsToTheLeft">@CloseTabsToTheLeftText</MListItem>
+                <MListItem OnClick="HandleOnCloseTabsToTheRight">@CloseTabsToTheRightText</MListItem>
+                <MListItem OnClick="HandleOnCloseOtherTabs">@CloseOtherTabsText</MListItem>
+            </MList>
+        </MMenu>
+    </MTabs>
+
+    @ChildContent
+</CascadingValue>
