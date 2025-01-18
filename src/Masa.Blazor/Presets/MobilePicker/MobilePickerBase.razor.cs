@@ -9,9 +9,10 @@ public partial class MobilePickerBase<TColumn, TColumnItem, TColumnItemValue, TV
     private IJSRuntime Js { get; set; } = null!;
 
     [Parameter]
-    public RenderFragment<ActivatorProps> ActivatorContent { get; set; }
+    public RenderFragment<ActivatorProps>? ActivatorContent { get; set; }
 
-    [Parameter] public string Title { get; set; }
+    [Parameter]
+    public string? Title { get; set; }
 
     [Parameter]
     public bool Visible
@@ -30,22 +31,22 @@ public partial class MobilePickerBase<TColumn, TColumnItem, TColumnItemValue, TV
     public EventCallback<bool> VisibleChanged { get; set; }
 
     [Parameter]
-    public TValue Value { get; set; }
+    public TValue? Value { get; set; }
 
     [Parameter]
-    public EventCallback<TValue> ValueChanged { get; set; }
+    public EventCallback<TValue?> ValueChanged { get; set; }
 
     #region paramters from MobilePickerView
 
-    public virtual List<TColumn> Columns { get; set; } = new();
+    public virtual List<TColumn> Columns { get; set; } = null!;
 
-    public virtual Func<TColumnItem, string> ItemText { get; set; }
+    public virtual Func<TColumnItem, string> ItemText { get; set; } = null!;
 
-    public virtual Func<TColumnItem, TColumnItemValue> ItemValue { get; set; }
+    public virtual Func<TColumnItem, TColumnItemValue> ItemValue { get; set; } = null!;
 
-    public virtual Func<TColumnItem, List<TColumnItem>> ItemChildren { get; set; }
+    public virtual Func<TColumnItem, List<TColumnItem>>? ItemChildren { get; set; }
 
-    public virtual Func<TColumnItem, bool> ItemDisabled { get; set; }
+    public virtual Func<TColumnItem, bool>? ItemDisabled { get; set; }
 
     // TODO: change to StringNumber, support px, vh, vw, rem
     [Parameter]
@@ -63,14 +64,22 @@ public partial class MobilePickerBase<TColumn, TColumnItem, TColumnItemValue, TV
     #endregion
 
     private bool _visible;
+    private Func<bool, Task>? _internalValueChanged;
 
     private List<TColumnItemValue> InternalValue { get; set; } = new();
 
+    protected virtual string? ClassPrefix { get; }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _internalValueChanged = ValueChanged.HasDelegate ? HandleVisibleChanged : default;
+    }
+
     private Task OnCancel() => HandleVisibleChanged(false);
 
-    protected virtual string ClassPrefix { get; }
-
-    protected virtual bool TryConvertInternalValueToValue(List<TColumnItemValue> internalValue, out TValue value)
+    protected virtual bool TryConvertInternalValueToValue(List<TColumnItemValue> internalValue, out TValue? value)
     {
         value = default;
 
@@ -80,7 +89,7 @@ public partial class MobilePickerBase<TColumn, TColumnItem, TColumnItemValue, TV
         return true;
     }
 
-    protected virtual bool TryConvertValueToInternalValue(TValue value, out List<TColumnItemValue> internalValue)
+    protected virtual bool TryConvertValueToInternalValue(TValue? value, out List<TColumnItemValue> internalValue)
     {
         internalValue = new();
 

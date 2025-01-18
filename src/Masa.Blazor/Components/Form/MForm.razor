@@ -1,0 +1,26 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+<CascadingValue Value="this" IsFixed>
+    <CascadingValue Value="EditContext" IsFixed>
+        <form class="@GetClass()"
+              style="@GetStyle()"
+              id="@Id"
+              @onsubmit="HandleOnSubmitAsync"
+              @attributes="@Attributes">
+            @ChildContent?.Invoke(FormContext!)
+
+            @if (ComputedAutoLabel)
+            {
+                <Masa.Blazor.Components.Form.FormInputLabelAutoGenerator />
+            }
+
+            @if (EditContext is not null)
+            {
+                <Masa.Blazor.Components.Form.ObjectGraphDataAnnotationsValidator @key="EditContext" />
+                @*the @key must be unique, so use the Model in the following code*@
+                <Masa.Blazor.Components.Form.FluentValidationValidator @key="Model" />
+            }
+        </form>
+    </CascadingValue>
+</CascadingValue>

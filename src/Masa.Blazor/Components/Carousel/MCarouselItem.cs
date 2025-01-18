@@ -1,52 +1,52 @@
-﻿using Microsoft.AspNetCore.Components.Web;
-
-namespace Masa.Blazor;
+﻿namespace Masa.Blazor;
 
 public class MCarouselItem : MWindowItem, IRoutable
 {
-    [Parameter]
-    public string Href { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; } = null!;
 
-    [Parameter]
-    public bool Link { get; set; }
+    [Parameter] public string? Href { get; set; }
 
-    [Parameter]
-    public EventCallback<MouseEventArgs> OnClick { get; set; }
+    [Parameter] public bool Link { get; set; }
 
-    [Parameter]
-    public string Tag { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
 
-    [Parameter]
-    public string Target { get; set; }
+    [Parameter] public string? Target { get; set; }
 
-    [Parameter]
-    public string Src { get; set; }
+    [Parameter] public string? Src { get; set; }
 
-    private IRoutable _router;
+    public bool Exact { get; }
+
+    public string? MatchPattern { get; }
+
+    private IRoutable? _router;
 
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
 
         _router = new Router(this);
+
+        var noRipple = Attributes.TryGetValue("ripple", out var ripple) && ripple is false or "false";
+
         (Tag, Attributes) = _router.GenerateRouteLink();
+
+        if (Tag == "a" && !noRipple)
+        {
+            Attributes["ripple"] = true;
+        }
     }
 
-    protected override void SetComponentClass()
+    protected override RenderFragment GenChildContent()
     {
-        base.SetComponentClass();
-
-        AbstractProvider
-            .Merge(typeof(BWindowItemDefaultSlot<>), typeof(BCarouselItemDefaultSlot<MCarouselItem>))
-            .Apply(typeof(BResponsive), typeof(MImage), attrs =>
-            {
-                attrs[nameof(MImage.Class)] = "m-carousel__item";
-                attrs[nameof(MImage.Src)] = Src;
-
-                if (WindowGroup is MCarousel carousel)
-                {
-                    attrs[nameof(MImage.Height)] = carousel.InternalHeight;
-                }
-            });
+        return builder =>
+        {
+            builder.OpenComponent<MImage>(0);
+            builder.AddAttribute(1, "Class", "m-carousel__item");
+            builder.AddAttribute(2, "Src", Src);
+            builder.AddAttribute(3, "Height", ((MCarousel?)WindowGroup)?.InternalHeight);
+            builder.AddAttribute(4, "ChildContent", ChildContent);
+            builder.AddAttribute(5, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, OnClick));
+            builder.CloseComponent();
+        };
     }
 }

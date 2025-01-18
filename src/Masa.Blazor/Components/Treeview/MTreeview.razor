@@ -1,0 +1,62 @@
+﻿@using Masa.Blazor.Components.Treeview
+@namespace Masa.Blazor
+@typeparam TItem
+@typeparam TKey
+@inherits MasaComponentBase
+
+<CascadingValue Value="IsDark" Name="IsDark">
+    <CascadingValue Value="this" IsFixed>
+        <div class="@GetClass()"
+             style="@GetStyle()"
+             id="@Id"
+             @ref="@Ref"
+             @attributes="@Attributes">
+            @if (ComputedItems.Any())
+            {
+                foreach (var item in ComputedItems)
+                {
+                    @GenChild(item, ItemDisabled?.Invoke(item) ?? false)
+                }
+            }
+            else
+            {
+                @ChildContent
+            }
+        </div>
+    </CascadingValue>
+</CascadingValue>
+
+@code {
+
+    private RenderFragment GenChild(TItem item, bool parentIsDisabled) => __builder =>
+    {
+        <MTreeviewNode Item="item"
+                       ParentIsDisabled="@parentIsDisabled"
+                       Activatable="@Activatable"
+                       ActiveClass="@ActiveClass"
+                       Selectable="@Selectable"
+                       SelectOnRowClick="@SelectOnRowClick"
+                       SelectedColor="@SelectedColor"
+                       Color="@Color"
+                       ExpandIcon="@ExpandIcon"
+                       IndeterminateIcon="@IndeterminateIcon"
+                       OffIcon="@OffIcon"
+                       OnIcon="@OnIcon"
+                       LoadingIcon="@LoadingIcon"
+                       ItemKey="@ItemKey"
+                       ItemText="@ItemText"
+                       ItemDisabled="@ItemDisabled"
+                       ItemChildren="@ItemChildren"
+                       LoadChildren="@LoadChildren"
+                       OpenOnClick="@OpenOnClick"
+                       Rounded="@Rounded"
+                       Shaped="@Shaped"
+                       Level="1"
+                       SelectionType="@SelectionType"
+                       AppendContent="@AppendContent"
+                       LabelContent="@LabelContent"
+                       PrependContent="@PrependContent">
+        </MTreeviewNode>
+    };
+
+}

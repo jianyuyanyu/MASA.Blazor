@@ -1,0 +1,84 @@
+﻿@namespace Masa.Blazor.Components.DataTable.Header
+@inherits MDataTableHeaderBase
+
+<thead class="@GetClass()">
+<tr>
+    @foreach (var header in Headers)
+    {
+        var title = header.Ellipsis is { Enabled: true, HideTitle: false } ? header.Text : null;
+
+        <th class="@GetHeaderClass(header)"
+            style="@GetHeaderStyle(header)"
+            @onclick="() => HandleOnHeaderColClick(header)"
+            title="@title">
+            @if (header.Value == "data-table-select" && !SingleSelect)
+            {
+                @GenSelectAll()
+            }
+            else if (header.Value == "data-table-no")
+            {
+                @GenNumber()
+            }
+            else
+            {
+                @if (!DisableSort && header.Sortable && header.Align == DataTableHeaderAlign.End)
+                {
+                    @GenSortIcon()
+                }
+
+                <span>
+                    @if (HeaderColContent != null)
+                    {
+                        @HeaderColContent(header)
+                    }
+                    else
+                    {
+                        @header.Text
+                    }
+                </span>
+                @if (!DisableSort && header.Sortable && header.Align != DataTableHeaderAlign.End)
+                {
+                    var sortIndex = Options.SortBy.IndexOf(header.Value);
+                    var beingSorted = sortIndex >= 0;
+
+                    @GenSortIcon()
+
+                    if (Options.MultiSort && beingSorted)
+                    {
+                        <span class="@Block.Element("sort-badge")">
+                            @(sortIndex + 1)
+                        </span>
+                    }
+                }
+
+                @if (ShowGroupBy && header.Groupable)
+                {
+                    <span @onclick="@(() => OnGroup.InvokeAsync(header.Value))"
+                          @onclick:stopPropagation>
+                        @GroupText
+                    </span>
+                }
+
+                @if (Resizable && header.Resizable)
+                {
+                    <div class="@Block.Element("col-resize")"
+                         style="max-height: var(--m-data-table-height)">
+                    </div>
+                }
+            }
+        </th>
+    }
+</tr>
+</thead>
+
+@code {
+
+    private async Task HandleOnHeaderColClick(DataTableHeader header)
+    {
+        if (!DisableSort && header.Sortable)
+        {
+            await OnSort.InvokeAsync(header.Value);
+        }
+    }
+
+}

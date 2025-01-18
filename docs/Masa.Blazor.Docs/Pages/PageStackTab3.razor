@@ -1,0 +1,38 @@
+﻿@page "/blazor/examples/page-stack/tab3"
+@using Masa.Blazor.Presets.PageStack.NavController
+@layout PageStackLayout
+@inject PageStackNavController NavController
+@implements IDisposable
+
+<p class="caption">url: /blazor/examples/page-stack/tab3</p>
+
+<div>
+    <h3>Tab 3 created at @(DateTimeOffset.UtcNow.ToString("HH:mm:ss zz"))</h3>
+    <PPageStackLink Href="/blazor/examples/page-stack/page1">Navigate to Page 1</PPageStackLink>
+</div>
+
+<MSyntaxHighlight Code="@sourceCode"
+                  Language="html"
+                  Style="font-size: 10px">
+</MSyntaxHighlight>
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        NavController.PageClosed += NavControllerOnPageClosed;
+    }
+
+    private void NavControllerOnPageClosed(object? sender, PageStackPageClosedEventArgs e)
+    {
+        Console.Out.WriteLine($"{e.RelativeUri} closed");
+    }
+
+    public void Dispose()
+    {
+        NavController.PageClosed -= NavControllerOnPageClosed;
+    }
+
+}

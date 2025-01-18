@@ -1,0 +1,31 @@
+﻿<MCard>
+    <MTabs
+        Color="deep-purple accent-4"
+        Right>
+        <MTab>Landscape</MTab>
+        <MTab>City</MTab>
+        <MTab>Abstract</MTab>
+
+        @for (int i = 0; i < 3; i++)
+        {
+            var tab = i;
+            <MTabItem>
+                <MContainer Fluid>
+                    <MRow>
+                        @for (int j = 0; j < 3; j++)
+                        {
+                            var localVariable = 660 + (tab * 3) + j;
+                            <MCol Cols="12"
+                                  Md="4">
+                                <MImage
+                                    Src="@("_content/Masa.Blazor.Docs/img/" + (localVariable) + "-250x300.jpg")"
+                                    AspectRatio="1">
+                                </MImage>
+                            </MCol>
+                        }
+                    </MRow>
+                </MContainer>
+            </MTabItem>
+        }
+    </MTabs>
+</MCard>

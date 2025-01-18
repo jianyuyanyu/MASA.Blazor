@@ -1,0 +1,30 @@
+﻿@page "/blazor/examples/page-stack/page3"
+@layout PageStackLayout
+@inject PageStackNavController NavController
+
+<PStackPageBarInit Title="Page 3">
+    <ActionContent>
+        <MButton IconName="mdi-home"
+                 OnClick="@(() => NavController.Clear())">
+        </MButton>
+    </ActionContent>
+</PStackPageBarInit>
+
+<p class="caption">url: /blazor/examples/page-stack/page3</p>
+
+<h3>Page 3 created at @(_pageCreatedAt.ToString("HH:mm:ss zz"))</h3>
+
+<a class="text-decoration-underline"
+   @onclick="@(() => NavController.GoBackToPage("/blazor/examples/page-stack/page1"))">
+   Go back to page 1
+</a>
+<br />
+<a class="text-decoration-underline"
+   @onclick="@(() => NavController.GoBackToPageAndReplace("/blazor/examples/page-stack/page2/xyz", "/blazor/examples/page-stack/page2/abc"))">
+    Go back to page 2 and replace with /abc
+</a>
+
+<MSyntaxHighlight Code="@sourceCode"
+                  Language="razor"
+                  Style="font-size: 10px">
+</MSyntaxHighlight>

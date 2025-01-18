@@ -1,60 +1,37 @@
-﻿using Masa.Blazor.Popup.Components;
-using Masa.Blazor.Presets;
-using OneOf;
-
-namespace Masa.Blazor;
+﻿namespace Masa.Blazor;
 
 public interface IPopupService
 {
-    #region Confirm
+    /// <summary>
+    /// Clear all opened popup components.
+    /// </summary>
+    void Clear();
 
-    Task<bool> ConfirmAsync(string title, string content);
+    /// <summary>
+    /// Close the specified type of popup component.
+    /// </summary>
+    /// <param name="componentType"></param>
+    void Close(Type componentType);
 
-    Task<bool> ConfirmAsync(string title, string content, AlertTypes type);
+    /// <summary>
+    /// Enqueue a snackbar to show.
+    /// </summary>
+    /// <param name="options"></param>
+    /// <returns></returns
+    Task EnqueueSnackbarAsync(SnackbarOptions options);
 
-    Task<bool> ConfirmAsync(string title, string content, AlertTypes type, Func<PopupOkEventArgs, Task> onOk);
+    /// <summary>
+    /// Open the specified type of popup component and wait for the result.
+    /// </summary>
+    /// <param name="componentType"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    Task<object?> OpenAsync(Type componentType, IDictionary<string, object?> parameters);
 
-    Task<bool> ConfirmAsync(string title, string content, Func<PopupOkEventArgs, Task> onOk);
-
-    Task<bool> ConfirmAsync(Action<ConfirmParameters> parameters);
-
-    #endregion
-
-    Task<object> OpenAsync(Type componentType, Dictionary<string, object> parameters);
-
-    #region Prompt
-
-    Task<string> PromptAsync(string title, string content);
-
-    Task<string> PromptAsync(string title, string content, Func<PopupOkEventArgs<string?>, Task> onOk);
-
-    Task<string> PromptAsync(Action<PromptParameters> parameters);
-
-    #endregion
-
-    #region Alert
-
-    Task AlertAsync(string content);
-
-    Task AlertAsync(string content, AlertTypes type);
-
-    Task AlertAsync(Exception ex);
-
-    Task AlertAsync(Action<AlertParameters> parameters);
-
-    #endregion
-
-    #region Toast
-    event Action<ToastGlobalConfig> OnToastConfig;
-    event Func<ToastConfig, Task> OnToastOpening;
-    Task ConfigToast(ToastGlobalConfig config);
-    Task ConfigToast(Action<ToastGlobalConfig> configAcion);
-    Task ToastAsync(string title, AlertTypes type);
-    Task ToastAsync(ToastConfig config);
-    Task ToastAsync(Action<ToastConfig> configAction);
-    Task ToastSuccessAsync(string title);
-    Task ToastErrorAsync(string title);
-    Task ToastInfoAsync(string title);
-    Task ToastWarningAsync(string title);
-    #endregion
+    /// <summary>
+    /// Open the specified type of popup component.
+    /// </summary>
+    /// <param name="componentType"></param>
+    /// <param name="parameters"></param>
+    void Open(Type componentType, IDictionary<string, object?>? parameters = null);
 }

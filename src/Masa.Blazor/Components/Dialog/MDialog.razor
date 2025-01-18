@@ -1,0 +1,49 @@
+﻿@namespace Masa.Blazor
+@inherits Masa.Blazor.Components.Bootable.MBootable
+
+<CascadingValue Value="IsDark" Name="IsDark">
+
+    @ComputedActivatorContent
+
+    <CascadingValue Value="this" IsFixed>
+        <div class="@_containerModifierBuilder.Add("attached", Attach != null).AddClass(Class)"
+             style="@Style"
+             id="@Id"
+             @ref="Ref"
+             role="dialog"
+             @attributes="@Attributes">
+            @if (IsBooted)
+            {
+                <div class="@_contentModifierBuilder.Add("active", IsActive).AddTheme(IsDark, IndependentTheme)"
+                     style="z-index: @ZIndex"
+                     @onkeydown="@Keydown"
+                     @ref="@ContentRef"
+                     @attributes="@ContentAttrs">
+
+                    <Transition Name="@Transition">
+                        <ShowTransitionElement Value="@IsActive"
+                                               Class="@GetClass()"
+                                               Style="@GetStyle()"
+                                               ReferenceCaptureAction="r => DialogRef = r"
+                                               tabindex="@(IsActive ? 0 : null)">
+                            <MShouldRender Value="@IsActive">
+                                @(OutcomeContent?.Invoke(_contentContext!) ?? ChildContent)
+                            </MShouldRender>
+                        </ShowTransitionElement>
+                    </Transition>
+
+                </div>
+
+                if (ShowOverlay)
+                {
+                    <MOverlay ScrimClass="@OverlayScrimClass"
+                              Value="@IsActive"
+                              ZIndex="@(ZIndex - 1)"
+                              @ref="Overlay">
+                    </MOverlay>
+                }
+            }
+        </div>
+    </CascadingValue>
+
+</CascadingValue>

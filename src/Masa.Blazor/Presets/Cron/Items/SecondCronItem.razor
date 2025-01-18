@@ -1,0 +1,20 @@
+﻿@namespace Masa.Blazor.Presets.Cron
+@inherits Masa.Blazor.Presets.Cron.CronItemBase
+
+@base.BuildRenderTree
+
+@code {
+
+    public SecondCronItem(PeriodTypes period = PeriodTypes.Second) : base(period)
+    {
+    }
+
+    protected override RenderFragment RadiosContent() => __builder =>
+    {
+        @PeriodContent()
+        @RangeContent()
+        @FromToContent()
+        @SpecifiedContent()
+    };
+
+}
