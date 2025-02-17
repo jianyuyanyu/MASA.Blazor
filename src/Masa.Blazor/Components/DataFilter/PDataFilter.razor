@@ -1,0 +1,81 @@
+﻿@namespace Masa.Blazor.Presets
+@using StyleBuilder = Masa.Blazor.Core.StyleBuilder
+@inherits MasaComponentBase
+
+<div class="@GetClass()"
+     style="@GetStyle()"
+     id="@Id"
+     @ref="Ref">
+    <MInputsFilter Dense="@Dense"
+                   HideDetails="@HideDetails"
+                   OnFieldChanged="@OnFieldChanged"
+                   @ref="_inputsFilter">
+        <div class="@_block.Element("high-frequency")">
+            <div class="@GetClass(_block.Element("high-frequency-inputs").Name, ComputedExpanded ? "hidden" : null)">
+                @HighFrequencyContent
+            </div>
+            <MSpacer/>
+            <div class="@_block.Element("high-frequency-actions")">
+                @if (ActionsContent is not null)
+                {
+                    @ActionsContent
+
+                    @if (!HideResetButton && !HideSearchButton)
+                    {
+                        <MDivider Vertical Class="mx-2"/>
+                    }
+                }
+
+                @if (!HideResetButton)
+                {
+                    <MButton Loading="_resetting"
+                             Icon
+                             OnClick="@HandleOnClear">
+                        <MIcon>mdi-reload</MIcon>
+                    </MButton>
+                }
+
+                @if (!HideSearchButton)
+                {
+                    <MButton Loading="_searching"
+                             Icon
+                             OnClick="@HandleOnSearch">
+                        <MIcon>mdi-magnify</MIcon>
+                    </MButton>
+                }
+
+                @if (LowFrequencyContent != null)
+                {
+                    @if (_expanded)
+                    {
+                        <MButton Icon OnClick="@HideLowFrequency">
+                            <MIcon>mdi-chevron-up</MIcon>
+                        </MButton>
+                    }
+                    else
+                    {
+                        <MButton Icon OnClick="@ShowLowFrequency">
+                            <MIcon>mdi-chevron-down</MIcon>
+                        </MButton>
+                    }
+                }
+            </div>
+        </div>
+
+        @if (LowFrequencyContent != null && IsBooted)
+        {
+            var style = StyleBuilder.Create()
+                .AddIf("display", "none", !_expanded && _firstRender)
+                .AddIf("opacity", "0", !_expanded)
+                .AddIf("overflow", "hidden", _expanding)
+                .AddHeight(_height)
+                .Build();
+
+            <div class="@GetClass(_block.Element("low-frequency").Name, ComputedExpanded ? "expanded" : null)"
+                 style="@style"
+                 @ref="_lowFrequencyRef">
+                @LowFrequencyContent
+            </div>
+        }
+    </MInputsFilter>
+</div>

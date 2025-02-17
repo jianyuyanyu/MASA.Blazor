@@ -1,0 +1,36 @@
+﻿@namespace Masa.Blazor
+@typeparam TValue
+@inherits MInput<TValue>
+
+@base.BuildRenderTree
+
+@code {
+    
+    protected override RenderFragment GenDefaultSlot() => __builder =>
+    {
+        <div class="@ControlInputClasses" ripple="@Ripple">
+            @GenSelection()
+        </div>
+        @GenLabel(false, true)
+    };
+
+    protected virtual RenderFragment? GenSelection() => default;
+
+    protected RenderFragment GenInput(string type) => __builder =>
+    {
+        <input disabled="@IsDisabled"
+               id="@Id"
+               role="@type"
+               type="@type"
+               value="@InternalValue"
+               checked="@IsActive"
+               @onclick:preventDefault
+               @onblur="@HandleOnBlur"
+               @onchange="@HandleOnChange"
+               @onfocus="@HandleOnFocus"
+               @onkeydown="@HandleOnKeyDown"
+               @attributes="@Attributes"
+               @ref="@InputElement"/>
+    };
+
+}

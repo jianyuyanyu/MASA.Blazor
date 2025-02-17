@@ -1,24 +1,43 @@
-﻿namespace Masa.Blazor
+﻿namespace Masa.Blazor;
+
+public class MChipGroup : MSlideGroup
 {
-    public partial class MChipGroup : MSlideGroup
+    public MChipGroup()
     {
-        public MChipGroup() : base(GroupType.ChipGroup)
+        GroupType = GroupType.ChipGroup;
+    }
+
+    [Parameter]
+    public bool Column
+    {
+        get => GetValue<bool>();
+        set => SetValue(value);
+    }
+
+    protected override void RegisterWatchers(PropertyWatcher watcher)
+    {
+        base.RegisterWatchers(watcher);
+
+        watcher.Watch<bool>(nameof(Column), (val) =>
         {
-        }
+            if (val)
+            {
+                ScrollOffset = 0;
+            }
 
-        [Parameter]
-        public bool Column { get; set; }
+            NextTick(OnResize);
+        }, immediate: true);
+    }
 
-        protected override void SetComponentClass()
-        {
-            base.SetComponentClass();
+    private ModifierBuilder _modifierBuilder = new Block("m-chip-group").CreateModifierBuilder();
 
-            CssProvider
-                .Merge(cssBuilder =>
-                {
-                    cssBuilder.Add("m-chip-group")
-                        .AddIf("m-chip-group--column ", () => Column);
-                });
-        }
+    protected override IEnumerable<string> BuildComponentClass()
+    {
+        return base.BuildComponentClass().Concat(
+            new[]
+            {
+                _modifierBuilder.Add(Column).Build()
+            }
+        );
     }
 }

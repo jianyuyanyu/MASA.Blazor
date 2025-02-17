@@ -1,11 +1,9 @@
-﻿using Masa.Blazor.Presets;
-
-#nullable enable
-
-namespace Masa.Blazor.Popup.Components;
+﻿namespace Masa.Blazor.Popup.Components;
 
 public partial class Prompt : PopupComponentBase
 {
+    [Inject] private I18n I18n { get; set; } = null!;
+
     [Parameter] public string? ActionsClass { get; set; }
 
     [Parameter] public string? ActionsStyle { get; set; }
@@ -34,28 +32,25 @@ public partial class Prompt : PopupComponentBase
 
     [Parameter] public string? TitleStyle { get; set; }
 
-    private readonly PromptValue _promptValue = new();
+    [Parameter] public Func<string, StringBoolean>? Rule { get; set; }
 
-    private MForm _form;
+    private MForm? _form;
     private bool _okLoading;
-    private PromptParameters? _defaultParameters;
+    private string? _value;
 
     private ModalButtonProps? ComputedOkButtonProps { get; set; }
 
     private ModalButtonProps? ComputedCancelButtonProps { get; set; }
 
+    private List<Func<string, StringBoolean>> Rules => Rule is not null ? new() { Rule } : new();
+
+    protected override string ComponentName => PopupComponents.PROMPT;
+
     protected override void OnParametersSet()
     {
-        if (_defaultParameters is null && MApp?.PromptParameters is not null)
-        {
-            _defaultParameters = new PromptParameters();
-
-            MApp.PromptParameters.Invoke(_defaultParameters);
-        }
-
-        _defaultParameters?.MapTo(this);
-
         base.OnParametersSet();
+
+        Rule ??= value => string.IsNullOrWhiteSpace(value) ? I18n.T("$masaBlazor.required") : true;
 
         OkText ??= I18n.T("$masaBlazor.ok");
         CancelText ??= I18n.T("$masaBlazor.cancel");
@@ -69,13 +64,12 @@ public partial class Prompt : PopupComponentBase
 
     private Task HandleOnCancel()
     {
-        Visible = false;
-        return SetResult(null);
+        return ClosePopupAsync(null);
     }
 
     private async Task HandleOnSubmit()
     {
-        PopupOkEventArgs<string?> args = new(_promptValue.Value);
+        PopupOkEventArgs<string?> args = new(_value);
 
         if (OnOk != null)
         {
@@ -86,25 +80,15 @@ public partial class Prompt : PopupComponentBase
 
         if (args.IsCanceled is false)
         {
-            Visible = false;
-            await SetResult(_promptValue.Value);
+            await ClosePopupAsync(_value);
         }
     }
 
     private async Task HandleOnOk()
     {
-        if (_form.Validate())
+        if (_form != null && _form.Validate())
         {
             await HandleOnSubmit();
-        }
-    }
-
-    private async Task SetResult(string? value)
-    {
-        if (PopupItem != null)
-        {
-            await Task.Delay(256);
-            PopupItem.Discard(value);
         }
     }
 

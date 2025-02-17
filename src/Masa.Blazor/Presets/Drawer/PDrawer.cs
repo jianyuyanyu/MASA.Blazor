@@ -12,6 +12,8 @@ public class PDrawer : ModalBase
 
     private string ComputedTransition => Left ? "dialog-left-transition" : "dialog-right-transition";
 
+    protected override string StaticClass => $"m-dialog--drawer {ComputedClass}";
+
     public override async Task SetParametersAsync(ParameterView parameters)
     {
         Class = "";
@@ -25,20 +27,16 @@ public class PDrawer : ModalBase
 
     protected override void OnParametersSet()
     {
-        BodyStyle = $"overflow-y: auto;padding: 24px;{ComputedContentHeight}";
-
-        if (!Class.Contains("m-dialog--drawer"))
-        {
-            Class += " m-dialog--drawer";
-        }
-
-        if (!Class.Contains(ComputedClass))
-        {
-            Class += $" {ComputedClass}";
-        }
-
         Transition = ComputedTransition;
 
         base.OnParametersSet();
+    }
+
+    protected override string GetBodyStyle()
+    {
+        return StyleBuilder.Create().Add("overflow-y: auto; padding: 24px")
+            .Add(ComputedContentHeight)
+            .Add(BodyStyle)
+            .ToString();
     }
 }

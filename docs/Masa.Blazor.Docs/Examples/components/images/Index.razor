@@ -1,0 +1,20 @@
+﻿<MRow Justify="@JustifyTypes.Center">
+    <MImage MaxHeight="@MaxHeight"
+            MaxWidth="@MaxWidth"
+            Contain="@Contain"
+            Src="_content/Masa.Blazor.Docs/img/365-510x300.jpg">
+    </MImage>
+</MRow>
+
+@code {
+
+    [Parameter]
+    public bool Contain { get; set; }
+
+    [Parameter]
+    public StringNumber MaxWidth { get; set; }
+
+    [Parameter]
+    public StringNumber MaxHeight { get; set; }
+
+}

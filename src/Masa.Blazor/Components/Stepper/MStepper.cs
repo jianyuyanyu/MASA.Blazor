@@ -1,129 +1,126 @@
-﻿namespace Masa.Blazor
+﻿namespace Masa.Blazor;
+
+public class MStepper : MSheet
 {
-    public partial class MStepper : MSheet
+    [Parameter] public bool Flat { get; set; }
+
+    [Parameter] public bool Vertical { get; set; }
+
+    [Parameter] public bool AltLabels { get; set; }
+
+    [Parameter] public bool NonLinear { get; set; }
+
+    [Parameter]
+    [MasaApiParameter(1)]
+    public int Value
     {
-        [Parameter]
-        public bool Flat { get; set; }
+        get => GetValue(1);
+        set => SetValue(value);
+    }
 
-        [Parameter]
-        public bool Vertical { get; set; }
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
 
-        [Parameter]
-        public bool AltLabels { get; set; }
+    private readonly List<MStepperStep> _steps = new();
+    private readonly List<MStepperContent> _content = new();
 
-        [Parameter]
-        public bool NonLinear { get; set; }
+    private bool _isBooted;
 
-        [Parameter]
-        public int Value
-        {
-            get
+    private bool IsReverse { get; set; }
+
+    private static Block _block = new("m-stepper");
+    private ModifierBuilder _modifierBuilder = _block.CreateModifierBuilder();
+
+    protected override IEnumerable<string> BuildComponentClass()
+    {
+        return base.BuildComponentClass().Concat(
+            new[]
             {
-                return GetValue(1);
+                _modifierBuilder.Add(Flat, _isBooted, Vertical, AltLabels, NonLinear).Build()
             }
-            set
+        );
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            UpdateView();
+        }
+    }
+
+    protected override void RegisterWatchers(PropertyWatcher watcher)
+    {
+        base.RegisterWatchers(watcher);
+
+        watcher
+            .Watch<int>(nameof(Value), (newVal, oldVal) =>
             {
-                SetValue(value);
-            }
-        }
+                IsReverse = newVal < oldVal;
 
-        [Parameter]
-        public EventCallback<int> ValueChanged { get; set; }
-
-        protected bool IsReverse { get; set; }
-
-        protected bool IsBooted { get; set; } = true;
-
-        protected List<MStepperStep> Steps = new();
-
-        protected List<MStepperContent> Content = new();
-
-        protected override void OnInitialized()
-        {
-            base.OnInitialized();
-
-            Watcher
-                .Watch<int>(nameof(Value), (newVal, oldVal) =>
+                if (oldVal != 0)
                 {
-                    IsReverse = newVal < oldVal;
+                    _isBooted = true;
+                }
 
-                    if (oldVal != 0)
-                    {
-                        IsBooted = true;
-                    }
-
-                    UpdateView();
-                });
-        }
-
-        protected override void SetComponentClass()
-        {
-            base.SetComponentClass();
-
-            CssProvider
-                .Merge(cssBuilder =>
-                {
-                    cssBuilder
-                        .Add("m-stepper")
-                        .AddIf("m-stepper--flat", () => Flat)
-                        .AddIf("m-stepper--is-booted", () => IsBooted)
-                        .AddIf("m-stepper--vertical", () => Vertical)
-                        .AddIf("m-stepper--alt-labels", () => AltLabels)
-                        .AddIf("m-stepper--non-linear", () => NonLinear);
-                });
-        }
-
-        protected override void OnAfterRender(bool firstRender)
-        {
-            if (firstRender)
-            {
                 UpdateView();
-            }
+
+                StateHasChanged();
+            });
+    }
+
+    protected override RenderFragment GenBody() => builder =>
+    {
+        builder.OpenComponent<CascadingValue<MStepper>>(0);
+        builder.AddAttribute(1, "Value", this);
+        builder.AddAttribute(2, "IsFixed", true);
+        builder.AddAttribute(3, "ChildContent", (RenderFragment)(sb => base.GenBody().Invoke(sb)));
+        builder.CloseComponent();
+    };
+
+    public void RegisterStep(MStepperStep step)
+    {
+        _steps.Add(step);
+    }
+
+    public void RegisterContent(MStepperContent content)
+    {
+        _content.Add(content);
+    }
+
+    public void UnRegisterStep(MStepperStep stepperStep)
+    {
+        _steps.Remove(stepperStep);
+    }
+
+    public void UnRegisterContent(MStepperContent stepperContent)
+    {
+        _content.Remove(stepperContent);
+    }
+
+    private void UpdateView()
+    {
+        for (var index = _steps.Count; --index >= 0;)
+        {
+            _steps[index].Toggle(Value);
         }
 
-        public void RegisterStep(MStepperStep step)
+        for (var index = _content.Count; --index >= 0;)
         {
-            Steps.Add(step);
+            _content[index].Toggle(Value, IsReverse);
         }
+    }
 
-        public void RegisterContent(MStepperContent content)
+    public void StepClick(int step)
+    {
+        if (ValueChanged.HasDelegate)
         {
-            Content.Add(content);
+            ValueChanged.InvokeAsync(step);
         }
-
-        public void UnRegisterStep(MStepperStep stepperStep)
+        else
         {
-            Steps.Remove(stepperStep);
-        }
-
-        public void UnRegisterContent(MStepperContent stepperContent)
-        {
-            Content.Remove(stepperContent);
-        }
-
-        public void UpdateView()
-        {
-            for (var index = Steps.Count; --index >= 0;)
-            {
-                Steps[index].Toggle(Value);
-            }
-
-            for (var index = Content.Count; --index >= 0;)
-            {
-                Content[index].Toggle(Value, IsReverse);
-            }
-        }
-
-        public void StepClick(int step)
-        {
-            if (ValueChanged.HasDelegate)
-            {
-                ValueChanged.InvokeAsync(step);
-            }
-            else
-            {
-                Value = step;
-            }
+            Value = step;
         }
     }
 }

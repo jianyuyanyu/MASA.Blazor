@@ -1,23 +1,36 @@
-﻿namespace Masa.Blazor
+﻿using Element = BemIt.Element;
+
+namespace Masa.Blazor
 {
     public partial class MListItemAvatar : MAvatar
     {
-        [Parameter]
-        public bool Horizontal { get; set; }
+        [Parameter] public bool Horizontal { get; set; }
 
-        protected override void SetComponentClass()
+        private static Element _element = new("m-list-item", "avatar");
+        private ModifierBuilder _modifierBuilder = _element.CreateModifierBuilder();
+
+        protected override void OnParametersSet()
         {
-            base.SetComponentClass();
+            base.OnParametersSet();
 
-            var prefix = "m-list-item__avatar";
-            CssProvider
-                .Merge(cssBuilder =>
+            if (!IsDirtyParameter(nameof(Size)))
+            {
+                // Use css instead of size prop
+                Size = null;
+            }
+        }
+
+        protected override IEnumerable<string> BuildComponentClass()
+        {
+            return base.BuildComponentClass().Concat(
+                new[]
                 {
-                    cssBuilder
-                        .Add(prefix)
-                        .AddIf($"{prefix}--horizontal", () => Horizontal)
-                        .AddIf("m-avatar-tile", () => Tile || Horizontal);
-                });
+                    _modifierBuilder
+                        .Add(Horizontal)
+                        .AddClass("m-avatar-tile", Tile || Horizontal)
+                        .Build()
+                }
+            );
         }
     }
 }
