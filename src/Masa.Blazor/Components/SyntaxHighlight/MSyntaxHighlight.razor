@@ -1,0 +1,26 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+@if (Inline)
+{
+    <code class="@GetCodeClass()"
+          style="@GetCodeStyle()"
+          id="@Id"
+          @attributes="@Attributes"
+          @ref="@Ref">
+        @((MarkupString)_codeHtml)
+    </code>
+}
+else
+{
+    <pre class="@GetClass()"
+         style="@GetStyle()"
+         id="@Id"
+         @attributes="@Attributes"
+         @ref="Ref">
+        <code class="@GetCodeClass()" 
+              style="@GetCodeStyle()">
+            @((MarkupString)_codeHtml)
+        </code>
+    </pre>
+}

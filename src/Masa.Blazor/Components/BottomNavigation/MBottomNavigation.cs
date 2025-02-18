@@ -1,83 +1,73 @@
-﻿using BlazorComponent.Web;
-using Element = BlazorComponent.Web.Element;
+﻿using Element = Masa.Blazor.JSInterop.Element;
+using StyleBuilder = Masa.Blazor.Core.StyleBuilder;
 
 namespace Masa.Blazor;
 
-public partial class MBottomNavigation : MItemGroup, IMeasurable, IScrollable, IAsyncDisposable
+public class MBottomNavigation : MItemGroup, IMeasurable, IScrollable, IAncestorRoutable
 {
-    public MBottomNavigation() : base(GroupType.ButtonGroup)
+    public MBottomNavigation()
     {
+        GroupType = GroupType.ButtonGroup;
     }
 
-    [Inject]
-    private MasaBlazor MasaBlazor { get; set; }
+    [Inject] private MasaBlazor MasaBlazor { get; set; } = null!;
 
-    [Parameter]
-    public bool Absolute { get; set; }
+    [Parameter] public bool Absolute { get; set; }
 
-    [Parameter]
-    public bool App { get; set; }
+    [Parameter] public bool App { get; set; }
 
-    [Parameter]
-    public bool Fixed { get; set; }
+    [Parameter] public bool Fixed { get; set; }
 
-    [Parameter]
-    public bool Grow { get; set; }
+    [Parameter] public bool Grow { get; set; }
 
-    [Parameter]
-    public StringNumber Height { get; set; } = 56;
+    [Parameter] [MasaApiParameter(56)] public StringNumber? Height { get; set; } = 56;
 
-    [Parameter]
-    public StringNumber MaxHeight { get; set; }
+    [Parameter] public StringNumber? MaxHeight { get; set; }
 
-    [Parameter]
-    public StringNumber MaxWidth { get; set; }
+    [Parameter] public StringNumber? MaxWidth { get; set; }
 
-    [Parameter]
-    public StringNumber MinHeight { get; set; }
+    [Parameter] public StringNumber? MinHeight { get; set; }
 
-    [Parameter]
-    public StringNumber MinWidth { get; set; }
+    [Parameter] public StringNumber? MinWidth { get; set; }
 
-    [Parameter]
-    public string ScrollTarget { get; set; } = "window";
+    [Parameter] public string? ScrollTarget { get; set; } = "window";
 
-    [Parameter]
-    public double ScrollThreshold { get; set; }
+    [Parameter] public double ScrollThreshold { get; set; }
 
-    [Parameter]
-    public StringNumber Width { get; set; }
+    [Parameter] public StringNumber? Width { get; set; }
 
-    [Parameter]
-    public bool HideOnScroll { get; set; }
+    [Parameter] public bool HideOnScroll { get; set; }
 
-    [Parameter]
-    public bool Horizontal { get; set; }
+    [Parameter] public bool Horizontal { get; set; }
 
-    [Parameter]
-    public bool Shift { get; set; }
+    [Parameter] public bool Shift { get; set; }
 
-    [Parameter]
-    public bool InputValue { get; set; } = true;
+    [Parameter] [MasaApiParameter(true)] public bool InputValue { get; set; } = true;
 
-    [Parameter]
-    public EventCallback<bool> InputValueChanged { get; set; }
+    [Parameter] public EventCallback<bool> InputValueChanged { get; set; }
 
-    [Parameter]
-    public string BackgroundColor { get; set; }
+    [Parameter] public string? BackgroundColor { get; set; }
 
-    [Parameter]
-    public string Color { get; set; }
+    [Parameter] public string? Color { get; set; }
 
-    private Scroller _scroller;
+    [Parameter] public bool Routable { get; set; }
+
+    private Scroller? _scroller;
     private bool _haveRendered;
+    private CancellationTokenSource _jsGetDomInfoCts = new();
 
     public bool CanScroll => HideOnScroll || !InputValue;
 
     private bool IsActive
     {
         get => _scroller?.IsActive ?? true;
-        set => _scroller.IsActive = value;
+        set
+        {
+            if (_scroller is not null)
+            {
+                _scroller.IsActive = value;
+            }
+        }
     }
 
     protected override void OnInitialized()
@@ -87,35 +77,38 @@ public partial class MBottomNavigation : MItemGroup, IMeasurable, IScrollable, I
         _scroller = new Scroller(this);
     }
 
-    protected override void SetComponentClass()
-    {
-        base.SetComponentClass();
+    private static Block _block = new("m-bottom-navigation");
+    private ModifierBuilder _modifierBuilder = _block.CreateModifierBuilder();
 
-        CssProvider
-            .Merge(cssBuilder =>
+    protected override IEnumerable<string> BuildComponentClass()
+    {
+        return base.BuildComponentClass().Concat(
+            new[]
             {
-                cssBuilder
-                    .Add("m-bottom-navigation")
-                    .AddIf("m-bottom-navigation--absolute", () => Absolute)
-                    .AddIf("m-bottom-navigation--grow", () =>  Grow)
-                    .AddIf("m-bottom-navigation--fixed",  () => !Absolute &&  (App || Fixed))
-                    .AddIf("m-bottom-navigation--horizontal", () =>  Horizontal)
-                    .AddIf("m-bottom-navigation--shift", () => Shift)
+                _modifierBuilder
+                    .Add(Absolute, Grow, Horizontal, Shift)
+                    .Add("fixed", !Absolute && (App || Fixed))
                     .AddTextColor(Color)
-                    .AddBackgroundColor(BackgroundColor);
-            }, styleBuilder =>
-            {
-                styleBuilder
-                    .Add(() => IsActive ? "transform:none" : "transform:translateY(100%)")
-                    .AddHeight(Height)
-                    .AddMinHeight(MinHeight)
-                    .AddMinWidth(MinWidth)
-                    .AddMaxHeight(MaxHeight)
-                    .AddMaxWidth(MaxWidth)
-                    .AddWidth(Width)
-                    .AddTextColor(Color)
-                    .AddBackgroundColor(BackgroundColor);
+                    .AddBackgroundColor(BackgroundColor)
+                    .Build()
             });
+    }
+
+    protected override IEnumerable<string> BuildComponentStyle()
+    {
+        return base.BuildComponentStyle().Concat(
+            StyleBuilder.Create()
+                .AddHeight(Height)
+                .AddMinHeight(MinHeight)
+                .AddMinWidth(MinWidth)
+                .AddMaxHeight(MaxHeight)
+                .AddMaxWidth(MaxWidth)
+                .AddWidth(Width)
+                .AddTextColor(Color)
+                .AddBackgroundColor(BackgroundColor)
+                .Add("transform", $"{(IsActive ? "none" : "translateY(100%)")}")
+                .GenerateCssStyles()
+        );
     }
 
     protected override async Task OnParametersSetAsync()
@@ -126,7 +119,7 @@ public partial class MBottomNavigation : MItemGroup, IMeasurable, IScrollable, I
 
         IsActive = InputValue;
 
-        _scroller.ScrollThreshold = ScrollThreshold;
+        _scroller!.ScrollThreshold = ScrollThreshold;
 
         if (_haveRendered)
         {
@@ -144,12 +137,13 @@ public partial class MBottomNavigation : MItemGroup, IMeasurable, IScrollable, I
         {
             if (!string.IsNullOrWhiteSpace(ScrollTarget) && CanScroll)
             {
-                await JsInvokeAsync(
+                await Js.InvokeVoidAsync(
                     JsInteropConstants.AddHtmlElementEventListener,
                     ScrollTarget,
                     "scroll",
                     DotNetObjectReference.Create(new Invoker(async () =>
-                        await CreateEventCallback(async () => await _scroller.OnScroll(ThresholdMet)).InvokeAsync()))
+                        await EventCallback.Factory.Create(this, async () => await _scroller!.OnScroll(ThresholdMet))
+                            .InvokeAsync()))
                 );
             }
 
@@ -179,28 +173,35 @@ public partial class MBottomNavigation : MItemGroup, IMeasurable, IScrollable, I
     {
         // TODO: implement applicationable
 
-        if (!App)
+        if (!App || IsDisposed)
         {
             return;
         }
 
-        var rect = await JsInvokeAsync<Element>(JsInteropConstants.GetDomInfo, Ref);
+        if (IsActive)
+        {
+            var rect = await Js.InvokeAsync<Element>(JsInteropConstants.GetDomInfo, _jsGetDomInfoCts.Token, Ref);
 
-        MasaBlazor.Application.Bottom = rect.ClientHeight;
+            MasaBlazor.Application.Bottom = rect.ClientHeight;
+        }
+        else
+        {
+            MasaBlazor.Application.Bottom = 0;
+        }
     }
 
-    public async ValueTask DisposeAsync()
+    protected override async ValueTask DisposeAsyncCore()
     {
-        try
+        _jsGetDomInfoCts.Cancel();
+
+        if (App)
         {
-            if (!string.IsNullOrWhiteSpace(ScrollTarget))
-            {
-                await JsInvokeAsync(JsInteropConstants.RemoveHtmlElementEventListener, ScrollTarget, "scroll");
-            }
+            MasaBlazor.Application.Bottom = 0;
         }
-        catch
+
+        if (!string.IsNullOrWhiteSpace(ScrollTarget))
         {
-            // nothing to do
+            await Js.InvokeVoidAsync(JsInteropConstants.RemoveHtmlElementEventListener, ScrollTarget, "scroll");
         }
     }
 }

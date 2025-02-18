@@ -1,0 +1,21 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+<CascadingValue Value="IsDark" Name="IsDark">
+    <ShowTransitionElement
+        Value="@(Show ?? true)"
+        Tag="@Tag"
+        Class="@GetClass()"
+        Style="@GetStyle()"
+        id="@Id"
+        @attributes="@Attributes"
+        ReferenceCaptureAction="r => Ref = r">
+        @GenBody()
+    </ShowTransitionElement>
+</CascadingValue>
+
+@code {
+
+    protected virtual RenderFragment GenBody() => __builder => { @ChildContent };
+
+}

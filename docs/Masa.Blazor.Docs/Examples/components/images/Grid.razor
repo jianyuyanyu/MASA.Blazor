@@ -1,0 +1,21 @@
+﻿<div>
+    <MRow>
+        @for (var index = 0; index < 9; index++)
+        {
+            var localVariable = 660+ index;
+            <MCol Cols="4">
+                <MImage Src="@("_content/Masa.Blazor.Docs/img/" + (localVariable) + "-250x300.jpg")"
+                         AspectRatio="1"
+                        Class="grey lighten-2">
+                    <PlaceholderContent>
+                        <MRow Class="fill-height ma-0"
+                              Align="@AlignTypes.Center"
+                              Justify="@JustifyTypes.Center">
+                            <MProgressCircular Indeterminate></MProgressCircular>
+                        </MRow>
+                    </PlaceholderContent>
+                </MImage>
+            </MCol>
+        }
+    </MRow>
+</div>

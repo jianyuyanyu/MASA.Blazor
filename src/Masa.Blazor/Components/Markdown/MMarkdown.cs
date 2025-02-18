@@ -1,228 +1,208 @@
-﻿namespace Masa.Blazor
+﻿namespace Masa.Blazor;
+
+public class MMarkdown : Container
 {
-    public class MMarkdown : BMarkdown, IAsyncDisposable
+    [Parameter] public string? Value { get; set; }
+
+    [Parameter] public Dictionary<string, object>? Options { get; set; }
+
+    [Parameter] public bool Readonly { get; set; }
+
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter] public string? Html { get; set; }
+
+    [Parameter] public EventCallback<string> HtmlChanged { get; set; }
+
+    [Parameter] public EventCallback<string> OnFocus { get; set; }
+
+    [Parameter] public EventCallback<string> OnBlur { get; set; }
+
+    [Parameter] public EventCallback<string> OnEscPress { get; set; }
+
+    [Parameter] public EventCallback<string> OnCtrlEnterPress { get; set; }
+
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    [Parameter] public EventCallback<string> OnToolbarButtonClick { get; set; }
+
+    [Parameter] public EventCallback OnAfter { get; set; }
+
+    [Parameter] public EventCallback BeforeAllUpload { get; set; }
+
+    private string? _prevValue;
+    private DotNetObjectReference<MMarkdown>? _objRef;
+    private IJSObjectReference? _vditorHelper;
+    private CancellationTokenSource? _inputCancellationTokenSource;
+
+    protected override void OnInitialized()
     {
-        [Parameter]
-        public override string Value
+        base.OnInitialized();
+
+        _prevValue = Value;
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (_prevValue != Value)
         {
-            get => _value;
-            set
-            {
-                if (_value != value)
-                {
-                    _value = value;
-                    _wattingUpdate = true;
-                }
-                SetValue(value);
-            }
+            _prevValue = Value;
+
+            _ = SetValueAsync(Value, true);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (IsDisposed || !firstRender)
+        {
+            return;
         }
 
-        [Parameter]
-        public Dictionary<string, object> Options { get; set; }
+        await CreateMarkdownAsync();
+    }
 
-        [Parameter]
-        public bool Readonly { get; set; }
+    public async Task CreateMarkdownAsync()
+    {
+        _objRef = DotNetObjectReference.Create(this);
+        _vditorHelper =
+            await Js.InvokeAsync<IJSObjectReference>("import", "./_content/Masa.Blazor/js/proxies/vditor/vditor-helper.js");
+        await _vditorHelper.InvokeVoidAsync("init", Ref, _objRef, Value, Options, BeforeAllUpload.HasDelegate);
+    }
 
-        [Parameter]
-        public EventCallback<string> ValueChanged { get; set; }
+    public async ValueTask<string?> GetValueAsync()
+    {
+        return await _vditorHelper.TryInvokeAsync<string>("getValue", Ref);
+    }
 
-        [Parameter]
-        public EventCallback<string> HtmlChanged { get; set; }
+    public async ValueTask<string?> GetHtmlAsync()
+    {
+        return await _vditorHelper.TryInvokeAsync<string>("getHtml", Ref);
+    }
 
-        [Parameter]
-        public EventCallback<string> OnFocus { get; set; }
+    public async Task SetValueAsync(string? value, bool clearStack = false)
+    {
+        await _vditorHelper.TryInvokeVoidAsync("setValue", Ref, value, clearStack);
+    }
 
-        [Parameter]
-        public EventCallback<string> OnBlur { get; set; }
+    public async Task InsertValueAsync(string value, bool render = true)
+    {
+        await _vditorHelper.TryInvokeVoidAsync("insertValue", Ref, value, render);
+    }
 
-        [Parameter]
-        public EventCallback<string> OnEscPress { get; set; }
-
-        [Parameter]
-        public EventCallback<string> OnCtrlEnterPress { get; set; }
-
-        [Parameter]
-        public EventCallback<string> OnSelect { get; set; }
-
-        [Parameter]
-        public EventCallback<string> OnToolbarButtonClick { get; set; }
-
-        [Parameter]
-        public EventCallback BeforeAllUpload { get; set; }
-
-        private bool _editorRendered = false;
-        private bool _wattingUpdate = false;
-        private string _value;
-
-        private DotNetObjectReference<MMarkdown> ObjRef { get; set; }
-
-        private IJSObjectReference VditorHelper { get; set; }
-
-        protected override void OnInitialized()
+    [JSInvokable]
+    public async Task HandleRenderedAsync()
+    {
+        if (OnAfter.HasDelegate)
         {
-            base.OnInitialized();
-            Watcher
-                .Watch<string>(nameof(Value), async val =>
-                {
-                    if (_wattingUpdate && _editorRendered)
-                    {
-                        _wattingUpdate = false;
-                        await SetValueAsync(_value, true);
-                    }
-                });
+            await OnAfter.InvokeAsync();
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        if (!string.IsNullOrWhiteSpace(Value) && HtmlChanged.HasDelegate)
         {
-            await base.OnAfterRenderAsync(firstRender);
-            if (IsDisposed || !firstRender)
-            {
-                return;
-            }
-            await CreateMarkdownAsync();
+            Html = await GetHtmlAsync();
+            await HtmlChanged.InvokeAsync(Html);
         }
 
-        public async Task CreateMarkdownAsync()
+        if (Readonly)
         {
-            ObjRef = DotNetObjectReference.Create(this);
-            VditorHelper = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/Masa.Blazor/js/vditor/vditor-helper.js");
-            await VditorHelper.InvokeVoidAsync("init", Ref, ObjRef, Value, Options, BeforeAllUpload.HasDelegate);
+            await _vditorHelper.TryInvokeVoidAsync("disabled", Ref);
+            await _vditorHelper.TryInvokeVoidAsync("preview", Ref);
         }
+    }
 
-        public async ValueTask<string> GetValueAsync()
+    [JSInvokable]
+    public async Task HandleInputAsync(string value)
+    {
+        _inputCancellationTokenSource?.Cancel();
+        _inputCancellationTokenSource = new CancellationTokenSource();
+
+        await RunTaskInMicrosecondsAsync(async () =>
         {
-            return await VditorHelper.InvokeAsync<string>("getValue", Ref);
-        }
+            _prevValue = value;
 
-        public async ValueTask<string> GetHtmlAsync()
-        {
-            return await VditorHelper.InvokeAsync<string>("getHtml", Ref);
-        }
-
-        public async Task SetValueAsync(string value, bool clearStack = false)
-        {
-            await VditorHelper.InvokeVoidAsync("setValue", Ref, value, clearStack);
-        }
-
-        public async Task InsertValueAsync(string value, bool render = true)
-        {
-            await VditorHelper.InvokeVoidAsync("insertValue", Ref, value, render);
-        }
-
-        [JSInvokable]
-        public async Task HandleRenderedAsync()
-        {
-            _editorRendered = true;
-            if (!string.IsNullOrWhiteSpace(Value) && HtmlChanged.HasDelegate)
-            {
-                Html = await GetHtmlAsync();
-                await HtmlChanged.InvokeAsync(Html);
-            }
-            if (Readonly)
-            {
-                await VditorHelper.InvokeVoidAsync("disabled", Ref);
-                await VditorHelper.InvokeVoidAsync("preview", Ref);
-            }
-        }
-
-        [JSInvokable]
-        public async Task HandleInputAsync(string value)
-        {
-            _value = value;
-            _wattingUpdate = false;
-
-            if (ValueChanged.HasDelegate)
-            {
-                await ValueChanged.InvokeAsync(value);
-            }
+            await ValueChanged.InvokeAsync(value);
 
             if (HtmlChanged.HasDelegate)
             {
                 Html = await GetHtmlAsync();
                 await HtmlChanged.InvokeAsync(Html);
             }
-        }
+        }, 500, _inputCancellationTokenSource.Token);
+    }
 
-        [JSInvokable]
-        public async Task HandleFocusAsync(string value)
+    [JSInvokable]
+    public async Task HandleFocusAsync(string value)
+    {
+        if (OnFocus.HasDelegate)
         {
-            if (OnFocus.HasDelegate)
-            {
-                await OnFocus.InvokeAsync(value);
-            }
+            await OnFocus.InvokeAsync(value);
         }
+    }
 
-        [JSInvokable]
-        public async Task HandleBlurAsync(string value)
+    [JSInvokable]
+    public async Task HandleBlurAsync(string value)
+    {
+        if (OnBlur.HasDelegate)
         {
-            if (OnBlur.HasDelegate)
-            {
-                await OnBlur.InvokeAsync(value);
-            }
+            await OnBlur.InvokeAsync(value);
         }
+    }
 
-        [JSInvokable]
-        public async Task HandleEscPressAsync(string value)
+    [JSInvokable]
+    public async Task HandleEscPressAsync(string value)
+    {
+        if (OnEscPress.HasDelegate)
         {
-            if (OnEscPress.HasDelegate)
-            {
-                await OnEscPress.InvokeAsync(value);
-            }
+            await OnEscPress.InvokeAsync(value);
         }
+    }
 
-        [JSInvokable]
-        public async Task HandleCtrlEnterPressAsync(string value)
+    [JSInvokable]
+    public async Task HandleCtrlEnterPressAsync(string value)
+    {
+        if (OnCtrlEnterPress.HasDelegate)
         {
-            if (OnCtrlEnterPress.HasDelegate)
-            {
-                await OnCtrlEnterPress.InvokeAsync(value);
-            }
+            await OnCtrlEnterPress.InvokeAsync(value);
         }
+    }
 
-        [JSInvokable]
-        public async Task HandleSelectAsync(string value)
+    [JSInvokable]
+    public async Task HandleSelectAsync(string value)
+    {
+        if (OnSelect.HasDelegate)
         {
-            if (OnSelect.HasDelegate)
-            {
-                await OnSelect.InvokeAsync(value);
-            }
+            await OnSelect.InvokeAsync(value);
         }
+    }
 
-        [JSInvokable]
-        public async Task HandleToolbarButtonClickAsync(string btnName)
+    [JSInvokable]
+    public async Task HandleToolbarButtonClickAsync(string btnName)
+    {
+        if (OnToolbarButtonClick.HasDelegate)
         {
-            if (OnToolbarButtonClick.HasDelegate)
-            {
-                await OnToolbarButtonClick.InvokeAsync(btnName);
-            }
+            await OnToolbarButtonClick.InvokeAsync(btnName);
         }
+    }
 
-        [JSInvokable]
-        public async Task HandleFileChanged()
+    [JSInvokable]
+    public async Task HandleFileChanged()
+    {
+        if (BeforeAllUpload.HasDelegate)
         {
-            if (BeforeAllUpload.HasDelegate)
-            {
-                await BeforeAllUpload.InvokeAsync();
-            }
+            await BeforeAllUpload.InvokeAsync();
         }
+    }
 
-        public async ValueTask DisposeAsync()
-        {
-            try
-            {
-                await VditorHelper.InvokeVoidAsync("destroy", Ref);
-                if (ObjRef != null)
-                {
-                    ObjRef.Dispose();
-                }
-                if (VditorHelper != null)
-                {
-                    await VditorHelper.DisposeAsync();
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        await _vditorHelper.TryInvokeVoidAsync("destroy", Ref);
+
+        _objRef?.Dispose();
+
+        await _vditorHelper.TryDisposeAsync();
     }
 }

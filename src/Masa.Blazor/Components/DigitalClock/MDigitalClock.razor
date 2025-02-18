@@ -1,0 +1,178 @@
+﻿@namespace Masa.Blazor
+@typeparam TValue
+@using Masa.Blazor.Components.TimePicker
+@inherits MasaComponentBase
+@inject I18n I18n
+
+<div class="@GetClass()"
+     style="@GetStyle()"
+     id="@Id"
+     @ref="Ref"
+     @attributes="@Attributes">
+    @if (MultiSection)
+    {
+        <ul class="@Block.Element("items")" @ref="@_hoursRef">
+            @for (var i = 0; i < (Format == TimeFormat.AmPm ? 12 : 24); i = i + HourStep)
+            {
+                bool isActive;
+
+                if (Format == TimeFormat.AmPm)
+                {
+                    if (ComputedHour == 12 && i == 0)
+                    {
+                        isActive = true;
+                    }
+                    else
+                    {
+                        isActive = ComputedHour == i;
+                    }
+                }
+                else
+                {
+                    isActive = ComputedHour == i;
+                }
+
+
+                @ItemRenderFragment(i, isActive, IsAllowedHourCallback, HandleOnHourClick, h => TimeHelper.FormatAmHour(h, Format))
+            }
+        </ul>
+
+        <ul class="@Block.Element("items")" @ref="@_minutesRef">
+            @ItemsRenderFragment(60, MinuteStep, Minute, IsAllowedMinuteCallback, HandleOnMinuteClick)
+        </ul>
+
+        @if (UseSeconds)
+        {
+            <ul class="@Block.Element("items")" @ref="@_secondsRef">
+                @ItemsRenderFragment(60, SecondStep, Second, IsAllowedSecondCallback, HandleOnSecondClick)
+            </ul>
+        }
+
+        @if (Format == TimeFormat.AmPm)
+        {
+            <ul class="@Block.Element("items")">
+                @AmPmItemContentRenderFragment(TimePeriod.Am)
+                @AmPmItemContentRenderFragment(TimePeriod.Pm)
+            </ul>
+        }
+    }
+    else
+    {
+        <ul class="@Block.Element("items")" @ref="_timesRef">
+            @{
+                var haveGotAdjacent = false;
+                var haveGotActive = false;
+
+                if (HideDisallowedTimes)
+                {
+                    var items = _singleSectionItems.Where(u => IsAllowedTimeCallback?.Invoke(u) is null or true).ToList();
+                    for (int i = 0; i < items.Count(); i++)
+                    {
+                        var index = i;
+                        var time = items[index];
+
+                        var active = time == InternalTime;
+                        var adjacent = false;
+                        if (!haveGotActive)
+                        {
+                            haveGotActive = active;
+                            if (!active && !haveGotAdjacent)
+                            {
+                                var isLast = index == items.Count - 1;
+                                if (isLast)
+                                {
+                                    adjacent = true;
+                                    haveGotAdjacent = true;
+                                }
+                                else
+                                {
+                                    adjacent = InternalTime < time.Add(Step);
+                                    if (adjacent)
+                                    {
+                                        haveGotAdjacent = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        @GenSingleItem(active, adjacent, Disabled, time)
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < _singleSectionItems.Count; i++)
+                    {
+                        // ReSharper disable once InlineTemporaryVariable
+                        var index = i;
+                        var time = _singleSectionItems[index];
+
+                        var disabled = Disabled || IsAllowedTimeCallback?.Invoke(time) is false;
+                        var active = time == InternalTime;
+                        var adjacent = false;
+                        if (!haveGotActive)
+                        {
+                            haveGotActive = active;
+                            if (!active && !haveGotAdjacent)
+                            {
+                                adjacent = InternalTime < time.Add(Step);
+                                if (adjacent)
+                                {
+                                    haveGotAdjacent = true;
+                                }
+                            }
+                        }
+
+                        @GenSingleItem(active, adjacent, disabled, time)
+                    }
+                }
+            }
+        </ul>
+    }
+</div>
+
+@code {
+
+    private RenderFragment GenSingleItem(bool active, bool adjacent, bool disabled, TimeOnly time) => __builder =>
+    {
+        <li class="@_itemModifierBuilder.Add(active).Add(adjacent).Add(disabled)"
+            @onclick="() => HandleOnTimeClick(time)">
+            @ItemContentRenderFragment(time.ToString(Format == TimeFormat.Hr24 ? "HH:mm" : "hh:mm tt"), active)
+        </li>
+    };
+
+    private RenderFragment ItemsRenderFragment(int count, int step, int? current, Func<int, bool>? isAllowedCb, Func<int, Task> onClick) => __builder =>
+    {
+        @for (var i = 0; i < count; i = i + step)
+        {
+            var isActive = current == i;
+            var index = i;
+
+            @ItemRenderFragment(index, isActive, isAllowedCb, onClick)
+        }
+    };
+
+    private RenderFragment ItemRenderFragment(int index, bool active, Func<int, bool>? isAllowedCb, Func<int, Task> onClick, Func<int, string>? format = null) => __builder =>
+    {
+        <li class="@_itemModifierBuilder.Add(active).Add("disabled", Disabled || isAllowedCb?.Invoke(index) is false)"
+            @onclick="() => onClick(index)">
+            @ItemContentRenderFragment(format?.Invoke(index) ?? index.ToString("00"), active)
+        </li>
+    };
+
+    private RenderFragment ItemContentRenderFragment(string content, bool active) => __builder =>
+    {
+        <div class="@_itemContentModifierBuilder.AddBackgroundColor(Color, active)" ripple="@IsRipple">
+            @content
+        </div>
+    };
+
+    private RenderFragment AmPmItemContentRenderFragment(TimePeriod period) => __builder =>
+    {
+        var active = _timePeriod == period;
+
+        <li class="@_itemModifierBuilder.Add(active)" @onclick="() => OnPeriodClick(period)">
+            @ItemContentRenderFragment(period == TimePeriod.Am ? I18n.T("$masaBlazor.timePicker.am") : I18n.T("$masaBlazor.timePicker.pm"), active)
+        </li>
+    };
+
+}

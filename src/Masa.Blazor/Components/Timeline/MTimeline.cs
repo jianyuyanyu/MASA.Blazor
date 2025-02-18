@@ -1,28 +1,50 @@
 ﻿namespace Masa.Blazor
 {
-    public partial class MTimeline : BTimeline, IThemeable
+    public partial class MTimeline : ThemeContainer
     {
-        [Parameter]
-        public bool AlignTop { get; set; }
+        [Inject] private MasaBlazor MasaBlazor { get; set; } = null!;
 
-        [Parameter]
-        public bool Dense { get; set; }
+        [Parameter] public bool AlignTop { get; set; }
 
+        [Parameter] public bool Dense { get; set; }
 
-        protected override void SetComponentClass()
+        [Parameter] public bool Reverse { get; set; }
+
+        private bool IndependentTheme =>
+            (IsDirtyParameter(nameof(Dark)) && Dark) || (IsDirtyParameter(nameof(Light)) && Light);
+
+#if NET8_0_OR_GREATER
+        protected override void OnParametersSet()
         {
-            var prefix = "m-timeline";
+            base.OnParametersSet();
 
-            CssProvider
-                .Apply(cssBuilder =>
-                {
-                    cssBuilder
-                        .Add(prefix)
-                        .AddIf($"{prefix}--align-top", () => AlignTop)
-                        .AddIf($"{prefix}--dense", () => Dense)
-                        .AddIf($"{prefix}--reverse", () => Reverse)
-                        .AddTheme(IsDark);
-                });
+            if (MasaBlazor.IsSsr && !IndependentTheme)
+            {
+                CascadingIsDark = MasaBlazor.Theme.Dark;
+            }
+        }
+#endif
+
+        private static Block _block = new("m-timeline");
+        private ModifierBuilder _modifierBuilder = _block.CreateModifierBuilder();
+
+        protected override IEnumerable<string> BuildComponentClass()
+        {
+            yield return _modifierBuilder
+                .Add(AlignTop)
+                .Add(Dense)
+                .Add(Reverse)
+                .AddTheme(IsDark, IndependentTheme)
+                .Build();
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<CascadingValue<bool>>(0);
+            builder.AddAttribute(1, "Value", Reverse);
+            builder.AddAttribute(2, "Name", "Reverse");
+            builder.AddAttribute(3, "ChildContent", (RenderFragment)base.BuildRenderTree);
+            builder.CloseComponent();
         }
     }
 }
