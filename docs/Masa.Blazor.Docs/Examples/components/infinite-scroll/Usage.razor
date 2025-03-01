@@ -1,0 +1,46 @@
+﻿<MCard Width="500"
+       Height="250"
+       Class="overflow-auto"
+       Style="margin: 0 auto"
+       Id="infinite-scroll-usage">
+    <MList>
+        @foreach (var item in _items)
+        {
+            <MListItem>
+                <MListItemContent>
+                    <MListItemTitle>@item</MListItemTitle>
+                </MListItemContent>
+            </MListItem>
+            <MDivider/>
+        }
+    </MList>
+    <MInfiniteScroll OnLoad="@OnLoad"
+                     Parent="#infinite-scroll-usage">
+    </MInfiniteScroll>
+</MCard>
+
+@code {
+    private static readonly List<string> MockItems = Enumerable.Range(1, 20).Select(n => "Item " + n).ToList();
+
+    private List<string> _items = [];
+    private int _page = 1;
+    private readonly int pageSize = 4;
+
+    private async Task OnLoad(InfiniteScrollLoadEventArgs args)
+    {
+        var append = await MockRequest();
+
+        _page++;
+
+        args.Status = append.Count < pageSize ? InfiniteScrollLoadStatus.Empty : InfiniteScrollLoadStatus.Ok;
+
+        _items.AddRange(append);
+    }
+
+    private async Task<List<string>> MockRequest()
+    {
+        await Task.Delay(1000);
+        
+        return MockItems.Skip((_page - 1) * pageSize).Take(pageSize).ToList();
+    }
+}

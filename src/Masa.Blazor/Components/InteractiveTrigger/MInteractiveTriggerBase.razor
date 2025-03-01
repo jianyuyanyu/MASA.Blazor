@@ -1,0 +1,60 @@
+﻿@namespace Masa.Blazor
+@using Microsoft.AspNetCore.Components.Rendering
+@using StyleBuilder = Masa.Blazor.Core.StyleBuilder
+@typeparam TValue
+@typeparam TInteractiveValue
+@inherits MasaComponentBase
+@inject NavigationManager NavigationManager
+
+<div class="@GetClass()"
+     style="@GetStyle()"
+     id="@ElementId"
+     @ref="@Ref"
+     @attributes="@Attributes">
+    @((RenderFragment)RenderLinkContent)
+    @((RenderFragment)RenderPopupContent)
+</div>
+
+@code {
+
+    protected abstract void RenderLinkContent(RenderTreeBuilder __builder);
+
+    protected RenderFragment RenderSingleLink(string name, TValue? value, TValue? interactiveValue) => __builder =>
+    {
+        <a class="@_linkModifierBuilder.Add("disabled", IsInteractive && DisableLinkOnInteractive)"
+           href="@NavigationManager.GetRelativeUriWithQueryParameters(new Dictionary<string, object?>() { { name, value  } })">
+            @ChildContent?.Invoke(interactiveValue)
+        </a>
+    };
+
+    private void RenderPopupContent(RenderTreeBuilder __builder)
+    {
+        @if (WithPopup)
+        {
+            var style = StyleBuilder.Create().AddIf("top", $"{Top}px", Top.HasValue)
+                .AddIf("left", $"{Left}px", Left.HasValue)
+                .AddIf("right", $"{Right}px", Right.HasValue)
+                .AddIf("bottom", $"{Bottom}px", Bottom.HasValue)
+                .Build();
+            
+            <div class="@_popupModifierBuilder.Add("active", _active).AddClass(PopupClass, _active)"
+                 style="@GetStyle(style, _active ? PopupStyle : null)">
+                @((RenderFragment)RenderInteractiveComponent)
+            </div>
+        }
+        else
+        {
+            @((RenderFragment)RenderInteractiveComponent)
+        }
+    }
+
+    private void RenderInteractiveComponent(RenderTreeBuilder __builder)
+    {
+        @if (IsInteractive)
+        {
+            <DynamicComponent Type="@InteractiveComponentType"
+                              Parameters="@ComputedInteractiveComponentParameters" />
+        }
+    }
+
+}

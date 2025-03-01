@@ -1,0 +1,16 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+<MElement Tag="@Tag"
+          Class="@GetClass()"
+          Style="@GetStyle()"
+          ReferenceCaptureAction="u => Ref = u"
+          id="@Id"
+          @attributes="@Attributes">
+    <Transition Name="@Transition">
+        <IfTransitionElement Class="@_block.Element("wrapper").Name"
+                             Value="_isActive">
+            @ChildContent
+        </IfTransitionElement>
+    </Transition>
+</MElement>

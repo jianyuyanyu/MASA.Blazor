@@ -1,0 +1,394 @@
+﻿@namespace Masa.Blazor
+@typeparam TItem
+@inherits MDataIterator<TItem>
+@using Masa.Blazor.Components.DataTable
+
+<CascadingValue Value="@HasFixedColumn"
+                Name="DataTableHasFixed">
+    <MSimpleTable Height="@Height"
+                  Width="@Width"
+                  FixedHeader="@FixedHeader"
+                  Dense="@Dense"
+                  Class="@GetClass()"
+                  Style="@GetStyle()"
+                  Id="@Id"
+                  RefBack="@RefBack"
+                  TopContent="@TopContent"
+                  @attributes="@Attributes">
+        <ChildContent>
+            @GenCaption()
+            @GenColgroup()
+            @GenHeaders()
+            @GenBody()
+            @GenFooter()
+        </ChildContent>
+        <BottomContent>
+            @FooterContent
+            @GenDefaultFooter()
+        </BottomContent>
+    </MSimpleTable>
+</CascadingValue>
+
+@code {
+
+    private RenderFragment GenCaption() => __builder =>
+    {
+        if (CaptionContent != null)
+        {
+            <caption>
+                @CaptionContent
+            </caption>
+        }
+        else if (!string.IsNullOrWhiteSpace(Caption))
+        {
+            <caption>
+                @Caption
+            </caption>
+        }
+    };
+
+    private RenderFragment GenColgroup() => __builder =>
+    {
+        <MDataTableColgroup Headers="@ComputedHeaders.ToList()"/>
+    };
+
+    private RenderFragment GenHeaders() => __builder =>
+    {
+        // TODO: header context, but there is different between datatable and dataiterator
+        // so we need to create a dataiterator base class
+        @HeaderContent
+
+        @if (!HideDefaultHeader)
+        {
+            <MDataTableHeader IsMobile="@IsMobile"
+                              Headers="@(ComputedHeaders.ToList<DataTableHeader>())"
+                              MultiSort="@MultiSort"
+                              Options="@InternalOptions"
+                              Resizable="@(ResizeMode != DataTableResizeMode.None)"
+                              DataTableSelectContent="@HeaderDataTableSelectContent"
+                              ShowGroupBy="@ShowGroupBy"
+                              GroupText="@GroupText"
+                              CheckboxColor="@CheckboxColor"
+                              SomeItems="@SomeItems"
+                              EveryItem="@EveryItem"
+                              SingleSelect="@SingleSelect"
+                              DisableSort="@DisableSort"
+                              HeaderColContent="@HeaderColContent"
+                              OnToggleSelectAll="@ToggleSelectAll"
+                              OnSort="@Sort"
+                              OnGroup="@Group"
+                              @attributes="@HeaderProps"/>
+        }
+
+        @if (Loading == true)
+        {
+            @GenLoading()
+        }
+    };
+
+    private RenderFragment GenBody() => __builder =>
+    {
+        // body context
+
+        <tbody>
+        @BodyPrependContent
+        @GenItems()
+        @BodyAppendContent
+        </tbody>
+    };
+
+    protected override RenderFragment RenderEmptyWrapper(RenderFragment? childContent, string? childText) => __builder =>
+    {
+        <tr class="@_block.Element("empty-wrapper")">
+            <td @attributes="@ColspanAttrs">
+                @ContentOrText(childContent, childText)
+            </td>
+        </tr>
+    };
+
+    private RenderFragment GenItems() => __builder =>
+    {
+        var empty = GenEmpty(Items?.Count() ?? 0, Pagination.ItemsLength);
+        if (empty is not null)
+        {
+            @empty
+        }
+        else if (GroupedItems.Any())
+        {
+            @GenGroupedRows()
+        }
+        else
+        {
+            @GenRows(ComputedItems.ToList())
+        }
+    };
+
+    private RenderFragment GenGroupedRows() => __builder =>
+    {
+        foreach (var group in GroupedItems)
+        {
+            if (!OpenCache.TryGetValue(group.Key, out var isOpen))
+            {
+                OpenCache[group.Key] = true;
+            }
+
+            if (GroupContent != null)
+            {
+                @GroupContent(
+                    new DataTableGroupContext<TItem>(
+                        group.Key,
+                        Options,
+                        IsMobile,
+                        group.ToList(),
+                        ComputedHeaders.ToList())
+                )
+            }
+            else
+            {
+                @GenDefaultGroupedRow(group, isOpen)
+            }
+        }
+    };
+
+    private RenderFragment GenDefaultGroupedRow(IGrouping<string, TItem> group, bool isOpen) => __builder =>
+    {
+        void ToggleFn() => ToggleGroup(group.Key);
+
+        <MDataTableRowGroup Value="@isOpen">
+            <ColumnHeaderContent>
+                @if (GroupHeaderContent != null)
+                {
+                    @GroupHeaderContent(
+                        new DataTableGroupHeaderContext<TItem>(
+                            group.Key,
+                            Options.GroupBy,
+                            group.ToList(),
+                            ComputedHeaders.ToList(),
+                            isOpen,
+                            EventCallback.Factory.Create(this, ToggleFn),
+                            EventCallback.Factory.Create(this, RemoveGroup))
+                    )
+                }
+                else
+                {
+                    <td class="text-start" @attributes="@ColspanAttrs">
+                        <MButton Class="ma-0"
+                                 Icon
+                                 Small
+                                 OnClick="@ToggleFn">
+                            <MIcon Icon="@(isOpen ? "$minus" : "$plus")"/>
+                        </MButton>
+                        @($"{GetText(Options.GroupBy[0])}: {group.Key}")
+                        <MButton Class="ma-0"
+                                 Icon
+                                 Small
+                                 OnClick="@RemoveGroup">
+                            <MIcon Icon="@("$close")"/>
+                        </MButton>
+                    </td>
+                }
+            </ColumnHeaderContent>
+            <RowContentContent>
+                @GenRows(group.ToList())
+            </RowContentContent>
+        </MDataTableRowGroup>
+    };
+
+    private RenderFragment GenRows(List<TItem> items) => __builder =>
+    {
+        if (ItemContent != null)
+        {
+            @GenScopedRows(items)
+        }
+        else
+        {
+            @GenDefaultRows(items)
+        }
+    };
+
+    private RenderFragment GenScopedRows(List<TItem> items) => __builder =>
+    {
+        foreach (var (item, index) in items.Select((item, index) => (item, index)))
+        {
+            @ItemContent!.Invoke(new ItemProps<TItem>(index, item))
+
+            if (IsExpanded((item)))
+            {
+                @ExpandedItemContent?.Invoke((ComputedHeaders, item))
+            }
+        }
+    };
+
+    private RenderFragment GenDefaultRows(List<TItem> items) => __builder =>
+    {
+        foreach (var (item, index) in items.Select((item, index) => (item, index)))
+        {
+            if (ExpandedItemContent != null)
+            {
+                @GenDefaultExpandedRow(item, index)
+            }
+            else
+            {
+                @GenDefaultSimpleRow(item, index)
+            }
+        }
+    };
+
+    private RenderFragment GenDefaultExpandedRow(TItem item, int index) => __builder =>
+    {
+        <MDataTableRowGroup Value="IsExpanded(item)">
+            <RowHeaderContent>
+                @GenDefaultSimpleRow(item, index)
+            </RowHeaderContent>
+            <RowContentContent>
+                <tr class="@_block.Element("expanded") m-data-table__expanded__content">
+                    @ExpandedItemContent?.Invoke((ComputedHeaders, item))
+                </tr>
+            </RowContentContent>
+        </MDataTableRowGroup>
+    };
+
+    private RenderFragment GenDefaultSimpleRow(TItem item, int index) => __builder =>
+    {
+        var disabled = IsSelectable(item) == false;
+        var isSelected = IsSelected(item);
+        var isExpanded = IsExpanded(item);
+
+        Dictionary<string, object?> parameters = new()
+        {
+            { nameof(MDataTableRow<TItem>.Headers), ComputedHeaders },
+            { nameof(MDataTableRow<TItem>.IsSelected), isSelected },
+            { nameof(MDataTableRow<TItem>.IsExpanded), isExpanded },
+            { nameof(MDataTableRow<TItem>.Disabled), disabled },
+            { nameof(MDataTableRow<TItem>.Stripe), Stripe },
+            { nameof(MDataTableRow<TItem>.ItemClass), ItemClass },
+            { nameof(MDataTableRow<TItem>.Index), index },
+            { nameof(MDataTableRow<TItem>.Item), item },
+            { "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, e => HandleOnRowClickAsync(e, item)) },
+            { "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, e => HandleOnRowContextmenuAsync(e, item)) },
+            { "__internal_preventDefault_oncontextmenu", OnRowContextmenuPreventDefault },
+            { "ondblclick", EventCallback.Factory.Create<MouseEventArgs>(this, e => HandleOnRowDblClickAsync(e, item)) },
+            { nameof(MDataTableRow<TItem>.HasSlot), HasSlot },
+            { nameof(MDataTableRow<TItem>.SlotContent), GenRowSlot() },
+            { nameof(MDataTableMobileRow<TItem>.HeaderColContent), HeaderColContent },
+        };
+
+        if (IsMobile)
+        {
+            parameters.Add(nameof(MDataTableMobileRow<TItem>.HideDefaultHeader), HideDefaultHeader);
+        }
+
+        <DynamicComponent Type="@(IsMobile ? typeof(MDataTableMobileRow<TItem>) : typeof(MDataTableRow<TItem>))"
+                          Parameters="@parameters"
+                          @key="@ItemKey?.Invoke(item)">
+        </DynamicComponent>
+
+        bool HasExpand(ItemColProps<TItem> props) => props.Header.Value == "data-table-expand" && ShowExpand;
+
+        bool HasSelect(ItemColProps<TItem> props) => props.Header.Value == "data-table-select" && ShowSelect;
+
+        bool HasNumber(ItemColProps<TItem> props) => props.Header.Value == "data-table-no" && ShowSerialNumber;
+
+        bool HasItemColContent() => ItemColContent is not null;
+
+        bool HasSlot(ItemColProps<TItem> props)
+        {
+            return HasExpand(props) || HasSelect(props) || HasNumber(props) || HasItemColContent();
+        }
+
+        RenderFragment<ItemColProps<TItem>> GenRowSlot() => context => __builder =>
+        {
+            DataTableItemExpandOrSelectContext<TItem> CreateExpandOrSelectContext()
+            {
+                return new DataTableItemExpandOrSelectContext<TItem>(
+                    item,
+                    index,
+                    EventCallback.Factory.Create<bool>(this, val => Expand(item, val)),
+                    EventCallback.Factory.Create<bool>(this, val => Select(item, val)),
+                    isExpanded,
+                    isSelected,
+                    ComputedHeaders.ToList(),
+                    EventCallback.Factory.Create<MouseEventArgs>(this, e => HandleOnRowClickAsync(e, item)),
+                    EventCallback.Factory.Create<MouseEventArgs>(this, e => HandleOnRowDblClickAsync(e, item)),
+                    EventCallback.Factory.Create<MouseEventArgs>(this, e => HandleOnRowContextmenuAsync(e, item))
+                );
+            }
+
+            if (HasExpand(context))
+            {
+                if (ItemDataTableExpandContent != null)
+                {
+                    @ItemDataTableExpandContent(CreateExpandOrSelectContext())
+                }
+                else
+                {
+                    <MIcon Class="@($"m-data-table__expand-icon {(isExpanded ? "m-data-table__expand-icon--active" : "")}")"
+                           OnClick="@(() => Expand(item, !isExpanded))"
+                           OnClickStopPropagation>
+                        @ExpandIcon
+                    </MIcon>
+                }
+            }
+            else if (HasSelect(context))
+            {
+                if (ItemDataTableSelectContent != null)
+                {
+                    @ItemDataTableSelectContent(CreateExpandOrSelectContext())
+                }
+                else
+                {
+                    <MSimpleCheckbox Class="m-data-table__checkbox"
+                                     Value="@isSelected"
+                                     Disabled="@disabled"
+                                     Color="@(CheckboxColor ?? "")"
+                                     ValueChanged="val => Select(item, val)">
+                    </MSimpleCheckbox>
+                }
+            }
+            else if (HasNumber(context))
+            {
+                <span>@(index + 1 + (Pagination.Page - 1) * Pagination.ItemsPerPage)</span>
+            }
+            else if (HasItemColContent())
+            {
+                @ItemColContent!(context)
+            }
+        };
+    };
+
+    private RenderFragment? GenFooter() => FootContent;
+
+    private RenderFragment GenLoading() => __builder =>
+    {
+        <thead>
+        <tr class="@_block.Element("progress")">
+            <th class="column" @attributes="@ColspanAttrs">
+                @GenProgress(Loading, LoaderHeight, progressContent: ProgressContent)
+            </th>
+        </tr>
+        </thead>
+    };
+
+    private RenderFragment GenProgress(StringBoolean? loading,
+        StringNumber loaderHeight,
+        string? color = null,
+        RenderFragment? progressContent = null) => __builder =>
+    {
+        if (loading == null || loading == false)
+        {
+            return;
+        }
+
+        if (progressContent != null)
+        {
+            @progressContent
+        }
+
+        <MProgressLinear Absolute
+                         Color="@((loading == true || loading == "") ? (color ?? "primary") : loading.AsT0)"
+                         Height="@loaderHeight"
+                         Indeterminate>
+        </MProgressLinear>
+    };
+
+}

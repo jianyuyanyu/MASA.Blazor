@@ -1,0 +1,42 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+<CascadingValue Value="IsDark" Name="IsDark">
+    <ToggleableTransitionElement Value="@TransitionValue"
+                                 ConditionType="@TransitionType"
+                                 Class="@GetClass()"
+                                 Style="@GetStyle()"
+                                 ReferenceCaptureAction="r => Ref = r"
+                                 id="@Id"
+                                 @attributes="@Attributes">
+        @GenBody()
+    </ToggleableTransitionElement>
+</CascadingValue>
+
+@code {
+
+    protected virtual RenderFragment GenBody() => __builder =>
+    {
+        @GenSizer()
+        @GenContent()
+    };
+
+    protected RenderFragment? GenSizer() => ComputedAspectRatio == null
+        ? null
+        : __builder =>
+        {
+            var style = GenAspectStyle(ComputedAspectRatio);
+
+            <div class="@_block.Element("sizer")"
+                 style="@style">
+            </div>
+        };
+
+    protected RenderFragment GenContent() => __builder =>
+    {
+        <div class="@_block.Element("content").AppendClasses(ContentClass)">
+            @ChildContent
+        </div>
+    };
+
+}

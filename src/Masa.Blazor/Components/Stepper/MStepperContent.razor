@@ -1,0 +1,47 @@
+﻿@namespace Masa.Blazor
+@using Masa.Blazor.Extensions
+@inherits MasaComponentBase
+
+@if (IsBooted || Eager)
+{
+    if (IsVertical)
+    {
+        <div class="@GetClass()"
+             style="@GetStyle()"
+             id="@Id"
+             @ref="@Ref"
+             @attributes="@Attributes">
+            @GenWrapper()
+        </div>
+    }
+    else
+    {
+        <Transition Name="@TransitionName">
+            <ShowTransitionElement Value="@IsActive"
+                                   class="@GetClass()"
+                                   style="@GetStyle()"
+                                   id="@Id"
+                                   ReferenceCaptureAction="r => Ref = r"
+                                   @attributes="Attributes">
+                @GenWrapper()
+            </ShowTransitionElement>
+        </Transition>
+    }
+}
+
+@code {
+
+    private RenderFragment GenWrapper() => __builder =>
+    {
+        var style = Stepper?.Vertical is true ? $"height:{_height.ToUnit()}" : null;
+
+        <div class="@_wrapperElement.AppendClasses(("active", IsActive))"
+             style="@style"
+             @ref="_wrapper">
+            <MShouldRender Value="@IsActive">
+                @ChildContent
+            </MShouldRender>
+        </div>
+    };
+
+}

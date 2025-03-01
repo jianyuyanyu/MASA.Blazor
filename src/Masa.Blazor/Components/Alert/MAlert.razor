@@ -1,0 +1,86 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+<CascadingValue Value="IsDark" Name="IsDark">
+    @if (Transition != null)
+    {
+        <Transition Name="@Transition">
+            <ShowTransitionElement Value="Value"
+                                   Tag="@Tag"
+                                   role="alert"
+                                   Class="@GetClass()"
+                                   Style="@GetStyle()"
+                                   id="@Id"
+                                   @attributes="@Attributes">
+                @RenderWrapper()
+            </ShowTransitionElement>
+        </Transition>
+    }
+    else
+    {
+        <MElement Tag="@Tag"
+                  role="alert"
+                  Class="@GetClass()"
+                  style="@GetStyle()"
+                  id="@Id"
+                  @attributes="@Attributes">
+            @RenderWrapper()
+        </MElement>
+    }
+</CascadingValue>
+
+@code {
+
+    private RenderFragment RenderWrapper() => __builder =>
+    {
+        <div class="@_block.Element("wrapper")">
+            @if (IsShowIcon)
+            {
+                <MIcon Color="@IconColor"
+                       Dark="@IsDarkTheme"
+                       Class="m-alert__icon">
+                    @IconContent
+                </MIcon>
+            }
+
+            <div class="@_block.Element("content")">
+                @if (HasTitle)
+                {
+                    <div class="@_block.Element("title")">
+                        @if (TitleContent == null)
+                        {
+                            @Title
+                        }
+                        else
+                        {
+                            @TitleContent
+                        }
+                    </div>
+                }
+
+                @ChildContent
+            </div>
+
+            @if (Border != Borders.None)
+            {
+                <div class="@_borderModifierBuilder.Add("has-color", ColoredBorder).Add(Border, Borders.None, "").AddTextColor(Color, ColoredBorder).AddClass(Type.ToString().ToLowerInvariant(), HasTypedBorder)"
+                     style="@CssStyleUtils.GetTextColor(Color, ColoredBorder)">
+                </div>
+            }
+
+            @if (Dismissible)
+            {
+                <MButton Class="m-alert__dismissible"
+                         Color="@IconColor"
+                         Dark="@IsDarkTheme"
+                         Icon
+                         Small
+                         OnClick="@HandleOnDismiss"
+                         aria-label="@CloseLabel">
+                    <MIcon Dark="@IsDarkTheme">@CloseIcon</MIcon>
+                </MButton>
+            }
+        </div>
+    };
+
+}

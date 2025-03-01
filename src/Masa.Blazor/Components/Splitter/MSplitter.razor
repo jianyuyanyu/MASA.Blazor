@@ -1,0 +1,36 @@
+﻿@namespace Masa.Blazor
+@using Masa.Blazor.Extensions
+@using StyleBuilder = Masa.Blazor.Core.StyleBuilder
+@inherits MasaComponentBase
+
+<div class="@GetClass()"
+     style="@GetStyle()"
+     id="@Id"
+     @ref="Ref"
+     @attributes="@Attributes">
+    <CascadingValue Value="this" IsFixed>
+        @ChildContent
+    </CascadingValue>
+
+    @for (var i = 0; i < _panes.Count; i++)
+    {
+        var index = i;
+        var pane = _panes[index];
+
+        <div class="@_pane.AppendClasses(pane.Class)"
+             style="@GetPaneStyle(pane)">
+            @pane.ChildContent
+        </div>
+
+        @if (index != _panes.Count - 1)
+        {
+            <div class="@_barModifierBuilder.Add("default", BarContent is null).Build()"
+                 style="@(StyleBuilder.Create().AddMinHeight(BarSize).AddMinWidth(BarSize))"
+                 @key="@index"
+                 @onmousedown="@(_ => HandleMousedown(index))"
+                 @ontouchstart="@(_ => HandleMousedown(index))">
+                @BarContent
+            </div>
+        }
+    }
+</div>

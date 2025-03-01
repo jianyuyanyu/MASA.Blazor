@@ -1,4 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System.Runtime.CompilerServices;
+using System.ComponentModel;
+
+[assembly:InternalsVisibleTo("Masa.Blazor.Test")]
 
 namespace Masa.Blazor
 {
@@ -11,7 +14,6 @@ namespace Masa.Blazor
         private double _right;
         private double _bottom;
         private double _footer;
-        private bool _isBooted;
 
         public double Bar
         {
@@ -100,19 +102,6 @@ namespace Masa.Blazor
                 {
                     _footer = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Footer)));
-                }
-            }
-        }
-
-        public bool IsBooted
-        {
-            get => _isBooted;
-            internal set
-            {
-                if (_isBooted != value)
-                {
-                    _isBooted = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsBooted)));
                 }
             }
         }
