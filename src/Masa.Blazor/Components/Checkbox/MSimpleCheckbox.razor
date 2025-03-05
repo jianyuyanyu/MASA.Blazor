@@ -1,0 +1,18 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+<CascadingValue Value="IsDark" Name="IsDark">
+    <div class="@GetClass()"
+         style="@GetStyle()"
+         @onclick="@HandleOnClickAsync"
+         @onclick:stopPropagation>
+        <div class="@_selectionBlock.Element("input")" ripple="@(Ripple && !Disabled)">
+            <MIcon Color="@ComputedColor"
+                   Disabled="@Disabled"
+                   Dark="@Dark"
+                   Light="@Light">
+                @ComputedIcon
+            </MIcon>
+        </div>
+    </div>
+</CascadingValue>

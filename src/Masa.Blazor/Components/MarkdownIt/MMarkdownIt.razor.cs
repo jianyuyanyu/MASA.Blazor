@@ -1,8 +1,6 @@
-﻿#nullable enable
+﻿namespace Masa.Blazor;
 
-namespace Masa.Blazor;
-
-public partial class MMarkdownIt : BDomComponentBase
+public partial class MMarkdownIt : MasaComponentBase
 {
     [Inject]
     protected MarkdownItJSModule MarkdownItJSModule { get; set; } = null!;
@@ -13,8 +11,7 @@ public partial class MMarkdownIt : BDomComponentBase
     [Parameter]
     public bool HeaderSections { get; set; }
 
-    [Parameter]
-    [EditorRequired]
+    [Parameter, EditorRequired]
     public string? Source { get; set; }
 
     [Parameter]
@@ -121,16 +118,19 @@ public partial class MMarkdownIt : BDomComponentBase
     [Parameter]
     public EventCallback<List<MarkdownItTocContent>?> OnTocParsed { get; set; }
 
+    [Parameter]
+    public EventCallback OnAfterRendered { get; set; }
+
     private string _mdHtml = string.Empty;
 
     private string? _prevSource;
     private IJSObjectReference? _markdownIt;
 
-    protected override void OnInitialized()
+    protected override void RegisterWatchers(PropertyWatcher watcher)
     {
-        base.OnInitialized();
+        base.RegisterWatchers(watcher);
 
-        Watcher
+        watcher
             .Watch<bool>(nameof(Html), GoCreateMarkdownItProxy)
             .Watch<bool>(nameof(XHtmlOut), GoCreateMarkdownItProxy)
             .Watch<bool>(nameof(Breaks), GoCreateMarkdownItProxy)
@@ -140,11 +140,9 @@ public partial class MMarkdownIt : BDomComponentBase
             .Watch<string[]>(nameof(Quotes), GoCreateMarkdownItProxy);
     }
 
-    protected override void SetComponentClass()
+    protected override IEnumerable<string> BuildComponentClass()
     {
-        base.SetComponentClass();
-
-        CssProvider.Apply(css => { css.Add("m-markdown-it"); });
+        yield return "m-markdown-it";
     }
 
     protected override async Task OnParametersSetAsync()
@@ -204,12 +202,14 @@ public partial class MMarkdownIt : BDomComponentBase
         {
             var result = await MarkdownItJSModule.ParseAll(_markdownIt, Source);
 
+            if (result is null) return;
+
             if (OnFrontMatterParsed.HasDelegate)
             {
                 await OnFrontMatterParsed.InvokeAsync(result.FrontMatter);
             }
 
-            _mdHtml = result.MarkupContent;
+            _mdHtml = result.MarkupContent ?? string.Empty;
 
             if (OnTocParsed.HasDelegate)
             {
@@ -220,7 +220,11 @@ public partial class MMarkdownIt : BDomComponentBase
         NextTick(async () =>
         {
             await MarkdownItJSModule.AfterRender(_markdownIt);
-            StateHasChanged();
+
+            if (OnAfterRendered.HasDelegate)
+            {
+                await OnAfterRendered.InvokeAsync();
+            }
         });
 
         StateHasChanged();

@@ -1,0 +1,31 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+
+<CascadingValue Value="this" IsFixed="true">
+    <CascadingValue Value="IsDark" Name="IsDark">
+        <div class="@GetClass()"
+             style="@GetStyle()"
+             id="@Id"
+             @ref="@Ref"
+             @attributes="@Attributes">
+            @TopContent
+
+            @if (WrapperContent != null)
+            {
+                @WrapperContent
+            }
+            else
+            {
+                <div class="@_wrapper"
+                     style="@CssStyleUtils.GetHeight(Height)"
+                     @ref="@WrapperElement">
+                    <table style="@CssStyleUtils.GetWidth(Width)">
+                        @ChildContent
+                    </table>
+                </div>
+            }
+
+            @BottomContent
+        </div>
+    </CascadingValue>
+</CascadingValue>

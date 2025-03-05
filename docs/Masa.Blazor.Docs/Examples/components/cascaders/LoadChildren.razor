@@ -1,0 +1,60 @@
+<MCascader @bind-Value="_value"
+           Items="_items"
+           ItemText="u => u.Label"
+           ItemValue="u => u.Id"
+           ItemChildren="u => u.Children"
+           LoadChildren="FetchChildrenAsync">
+</MCascader>
+
+@code {
+
+    private List<Item> _allItems =
+    [
+        new Item(3, "WuHan", 1, 2),
+        new Item(4, "WuChang District", 3, 3),
+        new Item(5, "HuangShi District", 1, 1)
+    ];
+
+    private List<Province> _items =
+    [
+        new Province(id: 1, label: "HuBei"),
+        new Province(id: 2, label: "ZheJiang")
+    ];
+
+    private int _value;
+
+    private async Task FetchChildrenAsync(Province node)
+    {
+        await Task.Delay(1000);
+
+        var children = _allItems.Where(item => item.ParentId == node.Id)
+            .Select(item => new Province
+            {
+                Id = item.Id,
+                Label = item.Label,
+                Children = item.Level < 3 ? new() : null //We only load children which count equal 0
+            }).ToList();
+
+        node.Children = children.Any() ? children.ToList() : null; //Set to null so we will not load any more
+    }
+
+    private class Province
+    {
+        public Province()
+        {
+        }
+
+        public Province(int id, string? label)
+        {
+            Id = id;
+            Label = label;
+        }
+
+        public int Id { get; set; }
+        public string? Label { get; set; }
+        public List<Province>? Children { get; set; } = new();
+    }
+
+    public record Item(int Id, string Label, int ParentId, int Level);
+
+}

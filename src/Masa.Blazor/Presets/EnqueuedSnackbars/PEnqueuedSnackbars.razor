@@ -1,0 +1,33 @@
+﻿@namespace Masa.Blazor.Presets
+@inherits MasaComponentBase
+
+<div class="@GetClass()"
+     style="@GetStyle()"
+     id="@Id"
+     @ref="@Ref"
+     @attributes="@Attributes">
+    <CascadingValue Name="IsDark" Value="IsDark">
+        <CascadingValue Value="this" IsFixed="true">
+            @foreach (var config in _stack)
+            {
+                <PSnackbar @key="config"
+                           EnqueueId="@config.Id"
+                           Title="@config.Title"
+                           Content="@config.Content"
+                           Type="@config.Type"
+                           Timeout="@config.Timeout"
+                           Closeable="@config.Closeable"
+                           ActionText="@config.ActionText"
+                           ActionColor="@config.ActionColor"
+                           OnAction="@config.OnAction"
+                           Elevation="@Elevation"
+                           Outlined="@Outlined"
+                           Rounded="@Rounded"
+                           Shaped="@Shaped"
+                           Text="@Text"
+                           OnClose="() => RemoveSnackbar(config.Id)">
+                </PSnackbar>
+            }
+        </CascadingValue>
+    </CascadingValue>
+</div>

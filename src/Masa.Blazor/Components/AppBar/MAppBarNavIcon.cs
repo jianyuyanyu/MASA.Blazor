@@ -1,23 +1,31 @@
-﻿namespace Masa.Blazor
+﻿namespace Masa.Blazor;
+
+public class MAppBarNavIcon : MButton
 {
-    public partial class MAppBarNavIcon : BAppBarNavIcon
+    [Parameter]
+    [MasaApiParameter(Ignored = true)]
+    public override bool Icon { get; set; } = true;
+
+    protected override void OnParametersSet()
     {
-        protected async override Task OnInitializedAsync()
-        {
-            AbstractProvider
-                .Apply<BButton, MButton>(prop =>
-                {
-                    prop[nameof(MButton.Class)] = $"{Class} m-app-bar__nav-icon";
-                    prop[nameof(MButton.Icon)] = true;
+        base.OnParametersSet();
 
-                    foreach (var attr in Attributes)
-                    {
-                        prop[attr.Key] = attr.Value;
-                    }
-                })
-                .Apply<BIcon, MIcon>();
-
-            await base.OnInitializedAsync();
-        }
+        Icon = true;
+        ChildContent ??= DefaultChildContent;
     }
+
+    protected override IEnumerable<string> BuildComponentClass()
+    {
+        return ["m-app-bar__nav-icon", ..base.BuildComponentClass()];
+    }
+
+    private RenderFragment DefaultChildContent => builder =>
+    {
+        if (IconName == null)
+        {
+            builder.OpenComponent<MIcon>(0);
+            builder.AddAttribute(1, "Icon", (Icon)"$menu");
+            builder.CloseComponent();
+        }
+    };
 }

@@ -1,0 +1,65 @@
+﻿@namespace Masa.Blazor.Presets
+@inherits MasaComponentBase
+
+<MSnackbar Value="Value"
+           ValueChanged="ValueChanged"
+           Color="@ComputedColor"
+           Class="@GetClass()"
+           Style="@GetStyle()"
+           ContentClass="@ContentClass"
+           Elevation="@Elevation"
+           MultiLine="@MultiLine"
+           Outlined="@Outlined"
+           Rounded="@Rounded"
+           Shaped="@Shaped"
+           Text="@Text"
+           Tile="@Tile"
+           Timeout="@ComputedTimeout"
+           Vertical="@Vertical"
+           Top="Top"
+           Right="Right"
+           Bottom="Bottom"
+           Left="Left"
+           OnClosed="@HandleOnClosed">
+    <ChildContent>
+        <div Class="@_alertBlock.Element("wrapper")">
+            @if (ComputedIcon != null)
+            {
+                <MIcon Color="@IconColor"
+                       Class="@_alertBlock.Element("icon").Name">
+                    @ComputedIcon
+                </MIcon>
+            }
+
+            <div>
+                @if (Title != null)
+                {
+                    <div class="@_alertBlock.Element("title")">@Title</div>
+                }
+
+                @Content
+            </div>
+        </div>
+    </ChildContent>
+    <ActionContent>
+        @if (OnAction != null)
+        {
+            <MButton Class="text-capitalize"
+                     Color="@(ActionColor ?? IconColor)"
+                     Loading="@_actionLoading"
+                     Text
+                     OnClick="HandleOnAction">
+                @ActionText
+            </MButton>
+        }
+
+        @if (ComputedCloseable)
+        {
+            <MButton Color="@IconColor"
+                     Icon
+                     OnClick="HandleOnClose">
+                <MIcon>$close</MIcon>
+            </MButton>
+        }
+    </ActionContent>
+</MSnackbar>

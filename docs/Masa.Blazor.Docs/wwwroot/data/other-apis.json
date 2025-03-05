@@ -1,0 +1,84 @@
+[
+  {
+    "name": "IPopupService",
+    "parameters": {
+      "methods": [
+        {
+          "name": "OpenAsync",
+          "type": "(Type componentType, Dictionary<string, object?> parameters) => Task<object?>"
+        },
+        {
+          "name": "Open",
+          "type": "(Type componentType, Dictionary<string, object?> parameters) => void"
+        },
+        {
+          "name": "Close",
+          "type": "(Type componentType) => void"
+        },
+        {
+          "name": "Clear",
+          "type": "() => void",
+          "releasedOn": "v1.7.0"
+        },
+        {
+          "name": "EnqueueSnackbarAsync",
+          "type": "(SnackbarOptions options) => Task"
+        }
+      ]
+    }
+  },
+  {
+    "name": "PageStackNavController",
+    "parameters": {
+      "events": [
+        {
+          "name": "PageClosed",
+          "type": "EventHandler<PageStackPageClosedEventArgs>"
+        },
+        {
+          "name": "TabChanged",
+          "type": "EventHandler<PageStackTabChangedEventArgs>",
+          "releasedOn": "v1.8.0"
+        }
+      ],
+      "methods": [
+        {
+          "name": "Push",
+          "type": "(string relativeUri) => void"
+        },
+        {
+          "name": "Pop",
+          "type": "(object? state = null) => void"
+        },
+        {
+          "name": "GoBack",
+          "type": "(int delta = 1, object? state = null) => void"
+        },
+        {
+          "name": "GoBackAndReplace",
+          "type": "(int delta, string? replaceUri, object? state = null) => void"
+        },
+        {
+          "name": "GoBackToPage",
+          "type": "(string absolutePath, object? state = null) => void"
+        },
+        {
+          "name": "GoBackToPageAndReplace",
+          "type": "(string absolutePath, string replaceUri, object? state = null) => void"
+        },
+        {
+          "name": "Replace",
+          "type": "(string relativeUri, object? state = null) => void"
+        },
+        {
+          "name": "Clear",
+          "type": "() => void"
+        },
+        {
+          "name": "GoBackToTab",
+          "type": "(string relativeUri) => void"
+        }
+      ]
+    }
+  }
+]

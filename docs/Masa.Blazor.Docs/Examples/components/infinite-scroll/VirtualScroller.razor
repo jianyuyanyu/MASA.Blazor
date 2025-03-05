@@ -1,0 +1,47 @@
+﻿<MCard Width="500" Style="margin: 0 auto">
+    <MVirtualScroll Height="250" Items="_items"
+                    Id="infinite-scroll-virtual">
+        <ItemContent>
+            <div>
+                <MListItem>
+                    <MListItemContent>
+                        <MListItemTitle>@context</MListItemTitle>
+                    </MListItemContent>
+                </MListItem>
+                <MDivider/>
+            </div>
+        </ItemContent>
+        <FooterContent>
+            <MInfiniteScroll OnLoad="@OnLoad"
+                             Parent="#infinite-scroll-virtual">
+            </MInfiniteScroll>
+        </FooterContent>
+    </MVirtualScroll>
+</MCard>
+
+
+@code {
+    private static readonly List<string> MockItems = Enumerable.Range(1, 100).Select(n => "Item " + n).ToList();
+    private readonly int pageSize = 10;
+
+    private int _page = 1;
+    private List<string> _items = [];
+
+    private async Task OnLoad(InfiniteScrollLoadEventArgs args)
+    {
+        var append = await MockRequest();
+
+        _page++;
+
+        args.Status = append.Count < pageSize ? InfiniteScrollLoadStatus.Empty : InfiniteScrollLoadStatus.Ok;
+
+        _items.AddRange(append);
+    }
+
+    private async Task<List<string>> MockRequest()
+    {
+        await Task.Delay(1000);
+
+        return MockItems.Skip((_page - 1) * pageSize).Take(pageSize).ToList();
+    }
+}

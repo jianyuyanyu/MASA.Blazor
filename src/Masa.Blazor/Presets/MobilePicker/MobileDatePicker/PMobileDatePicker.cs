@@ -11,7 +11,7 @@ public class PMobileDatePicker : MobilePickerBase<DateColumn, DateColumn, int, D
     public DateOnly Min { get; set; }
 
     [Parameter]
-    public Func<DatePrecision, int, string> Formatter { get; set; }
+    public Func<DatePrecision, int, string>? Formatter { get; set; }
 
     [Parameter]
     public DatePrecision Precision { get; set; } = DatePrecision.Day;
@@ -59,7 +59,7 @@ public class PMobileDatePicker : MobilePickerBase<DateColumn, DateColumn, int, D
             needChange = true;
         }
 
-        if (needChange)
+        if (needChange || Value == default)
         {
             Value = GetDateWithinBoundary(Value);
             Columns = GetYears(Value);

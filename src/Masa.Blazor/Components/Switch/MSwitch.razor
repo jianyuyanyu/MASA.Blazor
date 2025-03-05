@@ -1,0 +1,72 @@
+﻿@namespace Masa.Blazor
+@typeparam TValue
+@using StyleBuilder = Masa.Blazor.Core.StyleBuilder
+@inherits MSelectable<TValue>
+
+@base.BuildRenderTree
+
+@code {
+
+    private string? CurrentColor => IsLoading ? null : ValidationState;
+
+    private StyleBuilder GetStyleBuilder() => StyleBuilder.Create().AddTextColor(CurrentColor);
+
+    protected override RenderFragment GenDefaultSlot() => __builder =>
+    {
+        var trackStyle = GetStyleBuilder().AddBackgroundColor(ComputedTrackColor).Build();
+
+        <div class="@ControlWrapper.Name">
+            <div class="@_trackModifierBuilder.AddTextColor(CurrentColor).AddBackgroundColor(ComputedTrackColor).AddTheme(IsDark, IndependentTheme)"
+                 style="@trackStyle">
+            </div>
+
+            <div class="@ControlInputClasses" ripple="@Ripple">
+                @GenSelection()
+            </div>
+
+            <div class="@_block.Element("text")">
+                @GenText("left", LeftText, LeftIcon)
+                @GenText("right", RightText, RightIcon)
+            </div>
+        </div>
+
+        @GenLabel(true)
+    };
+
+    protected override RenderFragment? GenSelection() => __builder =>
+    {
+        var styleBuilder = GetStyleBuilder();
+        var thumbStyle = styleBuilder.Build();
+
+        @GenInput("checkbox")
+
+        <div class="@_thumbModifierBuilder.AddTextColor(CurrentColor).AddTheme(IsDark, IndependentTheme)"
+             style="@thumbStyle">
+            @*TODO: FabTransition*@
+            @RenderFragments.GenProgressCircular(Loading, CurrentColor, 16, 2)
+        </div>
+    };
+
+
+    private RenderFragment GenText(string name, string? text, string? icon) => __builder =>
+    {
+        RenderFragment? childContent = null;
+
+        if (!string.IsNullOrEmpty(icon))
+        {
+            childContent = @<MIcon Small>@icon</MIcon>;
+        }
+        else if (!string.IsNullOrEmpty(text))
+        {
+            childContent = b => b.AddContent(0, text);
+        }
+
+        if (childContent is not null)
+        {
+            <span class="@_block.Element(name)">
+                @childContent
+            </span>
+        }
+    };
+
+}

@@ -1,9 +1,6 @@
-﻿using BlazorComponent.Attributes;
-using Microsoft.JSInterop;
+﻿namespace Masa.Blazor;
 
-namespace Masa.Blazor;
-
-public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
+public partial class MGridstack<TItem> : MasaComponentBase
 {
     [Inject]
     protected GridstackJSModule Module { get; set; } = null!;
@@ -18,7 +15,7 @@ public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
     public Func<TItem, string> ItemKey { get; set; } = null!;
 
     [Parameter]
-    public Func<TItem, GridstackWidgetPosition> ItemPosition { get; set; }
+    public Func<TItem, GridstackWidgetPosition>? ItemPosition { get; set; }
 
     [Parameter]
     public string? ItemClass { get; set; }
@@ -37,7 +34,7 @@ public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
     /// Integer > 0 (default 12) which can change on the fly with column(N) API, or 'auto' for nested grids to size themselves to the parent grid container (to make sub-items are the same size). 
     /// </summary>
     [Parameter]
-    [DefaultValue(12)]
+    [MasaApiParameter(12)]
     public int Column { get; set; } = 12;
 
     /// <summary>
@@ -62,7 +59,7 @@ public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
     /// gap size around grid item and content (default: 10px)
     /// </summary>
     [Parameter]
-    [DefaultValue(10)]
+    [MasaApiParameter(10)]
     public int Margin { get; set; } = 10;
 
     /// <summary>
@@ -80,6 +77,9 @@ public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
     [Parameter]
     public EventCallback<GridstackResizeEventArgs> OnResize { get; set; }
 
+    private static Block _block = new("m-gridstack");
+    private static Block _itemBlock = _block.Extend("item");
+
     private string? _prevItemKeys;
     private IJSObjectReference? _gridstackInstance;
 
@@ -87,26 +87,22 @@ public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
     {
         await base.SetParametersAsync(parameters);
 
-        ArgumentNullException.ThrowIfNull(Items);
-        ArgumentNullException.ThrowIfNull(ItemContent);
-        ArgumentNullException.ThrowIfNull(ItemKey);
+        Items.ThrowIfNull(ComponentName);
+        ItemKey.ThrowIfNull(ComponentName);
+        ItemContent.ThrowIfNull(ComponentName);
     }
 
-    protected override void OnInitialized()
+    protected override void RegisterWatchers(PropertyWatcher watcher)
     {
-        base.OnInitialized();
+        base.RegisterWatchers(watcher);
 
-        Watcher.Watch<bool>(nameof(Readonly), (val) => { _ = SetStatic(val); });
+        watcher.Watch<bool>(nameof(Readonly), (val) => { _ = SetStatic(val); });
     }
 
-    protected override void SetComponentClass()
+    protected override IEnumerable<string> BuildComponentClass()
     {
-        base.SetComponentClass();
-
-        CssProvider.Apply(cssBuilder => cssBuilder.Add("m-gridstack"))
-                   .Apply("item",
-                       cssBuilder => cssBuilder.Add("m-gridstack-item").Add(ItemClass),
-                       styleBuilder => styleBuilder.Add(ItemStyle));
+        yield return _block.Name;
+        yield return "grid-stack";
     }
 
     protected override async Task OnParametersSetAsync()
@@ -155,10 +151,12 @@ public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
 
     public async ValueTask<List<GridstackWidget>> OnSave()
     {
+        if (_gridstackInstance is null) return new List<GridstackWidget>();
+
         return await Module.Save(_gridstackInstance);
     }
 
-    private void GridstackOnResize(object sender, GridstackResizeEventArgs e)
+    private void GridstackOnResize(object? sender, GridstackResizeEventArgs e)
     {
         if (OnResize.HasDelegate)
         {
@@ -178,19 +176,12 @@ public partial class MGridstack<TItem> : BDomComponentBase, IAsyncDisposable
         await Module.SetStatic(_gridstackInstance, staticValue);
     }
 
-    public async ValueTask DisposeAsync()
+    protected override async ValueTask DisposeAsyncCore()
     {
-        try
+        Module.Resize -= GridstackOnResize;
+        if (_gridstackInstance is not null)
         {
-            Module.Resize -= GridstackOnResize;
-            if (_gridstackInstance is not null)
-            {
-                await _gridstackInstance.DisposeAsync();
-            }
-        }
-        catch
-        {
-            // ignored
+            await _gridstackInstance.DisposeAsync();
         }
     }
 }

@@ -1,0 +1,36 @@
+﻿@namespace Masa.Blazor
+@inherits MasaComponentBase
+@typeparam TValue
+
+<CascadingValue Value="IsDark" Name="IsDark">
+    <div class="@GetClass()"
+         style="@GetStyle()"
+         @ref="Ref">
+        <div class="@_selectionControls.Element("input").AppendClasses(CssClassUtils.GetTextColor(RippleState))" ripple>
+
+            <MIcon Icon="@(IsActive ? OnIcon : OffIcon)"
+                   Dense="@(RadioGroup?.Dense is true)"
+                   Color="@ValidationState"/>
+
+            <input disabled="@Disabled"
+                   id="@Id"
+                   role="radio"
+                   type="radio"
+                   checked="@IsActive"
+                   value="@Value"
+                   @onblur="OnBlur"
+                   @onchange="@HandleOnChange"
+                   @onfocus="OnFocus"
+                   @onkeydown="OnKeyDown"
+                   @onclick:stopPropagation
+                   @attributes="@Attributes"/>
+        </div>
+
+        <MLabel For="@Id"
+                Color="@ValidationState"
+                Focused="@HasState"
+                @onclick:stopPropagation>
+            @RenderFragments.RenderFragmentOrText(LabelContent, Label, wrapperTag: null)
+        </MLabel>
+    </div>
+</CascadingValue>

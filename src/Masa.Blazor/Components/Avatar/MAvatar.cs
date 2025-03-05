@@ -1,70 +1,61 @@
-﻿namespace Masa.Blazor
+﻿using StyleBuilder = Masa.Blazor.Core.StyleBuilder;
+
+namespace Masa.Blazor;
+
+public class MAvatar : Container
 {
-    public partial class MAvatar : BAvatar
+    [Parameter] public bool Left { get; set; }
+
+    [Parameter] public bool Right { get; set; }
+
+    [Parameter] public StringBoolean? Rounded { get; set; }
+
+    [Parameter] public bool Tile { get; set; }
+
+    [Parameter] [MasaApiParameter(48)] public StringNumber? Size { get; set; } = 48;
+
+    [Parameter] public StringNumber? Height { get; set; }
+
+    [Parameter] public StringNumber? MaxHeight { get; set; }
+
+    [Parameter] public StringNumber? MaxWidth { get; set; }
+
+    [Parameter] public StringNumber? MinHeight { get; set; }
+
+    [Parameter] public StringNumber? MinWidth { get; set; }
+
+    [Parameter] public StringNumber? Width { get; set; }
+
+    [Parameter] public string? Color { get; set; }
+
+    private static Block _block = new("m-avatar");
+    private ModifierBuilder _modifierBuilder = _block.CreateModifierBuilder();
+
+    protected override IEnumerable<string> BuildComponentClass()
     {
-        [Parameter]
-        public bool Left { get; set; }
+        yield return _modifierBuilder
+            .Add(Left)
+            .Add(Right)
+            .AddRounded(Rounded, Tile)
+            .AddBackgroundColor(Color)
+            .Build();
+    }
 
-        [Parameter]
-        public bool Right { get; set; }
+    protected override IEnumerable<string> BuildComponentStyle()
+    {
+        var isDirtySize = IsDirtyParameter(nameof(Size));
 
-        [Parameter]
-        public StringBoolean Rounded { get; set; }
-
-        [Parameter]
-        public bool Tile { get; set; }
-
-        [Parameter]
-        public StringNumber Size { get; set; } = 48;
-
-        [Parameter]
-        public StringNumber Height { get; set; }
-
-        [Parameter]
-        public StringNumber MaxHeight { get; set; }
-
-        [Parameter]
-        public StringNumber MaxWidth { get; set; }
-
-        [Parameter]
-        public StringNumber MinHeight { get; set; }
-
-        [Parameter]
-        public StringNumber MinWidth { get; set; }
-
-        [Parameter]
-        public StringNumber Width { get; set; }
-
-        [Parameter]
-        public string Color { get; set; }
-
-        protected override void SetComponentClass()
-        {
-            var prefix = "m-avatar";
-
-            CssProvider
-                .Apply(cssBuilder =>
-                {
-                    cssBuilder
-                        .Add(prefix)
-                        .AddIf($"{prefix}--left", () => Left)
-                        .AddIf($"{prefix}--right", () => Right)
-                        .AddRounded(Rounded, Tile)
-                        .AddBackgroundColor(Color);
-                }, styleBuilder =>
-                {
-                    styleBuilder
-                        .AddHeight(Size)
-                        .AddMinWidth(Size)
-                        .AddWidth(Size)
-                        .AddHeight(Height)
-                        .AddWidth(Width)
-                        .AddMinWidth(MinWidth)
-                        .AddMaxWidth(MaxWidth)
-                        .AddMinHeight(MinHeight)
-                        .AddMaxHeight(MaxHeight)
-                        .AddBackgroundColor(Color);
-                });
-        }
+        return StyleBuilder.Create()
+            .AddHeight(Size, isDirtySize)
+            .AddMinWidth(Size, isDirtySize)
+            .AddWidth(Size, isDirtySize)
+            .AddHeight(Height, IsDirtyParameter(nameof(Height)))
+            .AddWidth(Width, IsDirtyParameter(nameof(Width)))
+            .AddMinWidth(MinWidth, IsDirtyParameter(nameof(MinWidth)))
+            .AddMaxWidth(MaxWidth, IsDirtyParameter(nameof(MaxWidth)))
+            .AddMinHeight(MinHeight, IsDirtyParameter(nameof(MinHeight)))
+            .AddMaxHeight(MaxHeight, IsDirtyParameter(nameof(MaxHeight)))
+            .AddBackgroundColor(Color)
+            .GenerateCssStyles();
     }
 }
